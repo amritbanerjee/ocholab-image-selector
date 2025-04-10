@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🖼️ Image Selection App
+# 🖼️ ocholab Image Selector
 
 [![React](https://img.shields.io/badge/React-18.2.0-61DAFB?style=flat-square&logo=react&logoColor=white)](https://reactjs.org/)
 [![Vite](https://img.shields.io/badge/Vite-5.0.0-646CFF?style=flat-square&logo=vite&logoColor=white)](https://vitejs.dev/)
@@ -8,7 +8,7 @@
 [![TailwindCSS](https://img.shields.io/badge/Tailwind-3.3.6-38B2AC?style=flat-square&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square)](LICENSE)
 
-A modern React application with a Tinder-like swiping interface for image selection, powered by Supabase for authentication and data storage.
+A modern React application with a Tinder-like swiping interface for image selection, developed by ocholab and powered by Supabase for authentication and data storage.
 
 [✨ Demo](#) | [🐛 Report Bug](#) | [🔍 Request Feature](#)
 
@@ -55,8 +55,8 @@ A modern React application with a Tinder-like swiping interface for image select
 1. **Clone the repository**:
 
 ```bash
-git clone https://github.com/yourusername/ImageSelectionTInder.git
-cd ImageSelectionTInder
+git clone https://github.com/yourusername/ocholab-image-selector.git
+cd ocholab-image-selector
 ```
 
 2. **Install dependencies**:
@@ -78,7 +78,7 @@ VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 npm run dev
 ```
 
-5. **Open your browser** and navigate to `http://localhost:5173/ImageSelectionTInder`
+5. **Open your browser** and navigate to `http://localhost:5173/ocholab-image-selector`
 
 ---
 
@@ -104,7 +104,7 @@ This project uses the following environment variables:
 ```bash
 git add .
 git commit -m "Initial commit"
-git remote add origin https://github.com/yourusername/ImageSelectionTInder.git
+git remote add origin https://github.com/yourusername/ocholab-image-selector.git
 git push -u origin main
 ```
 
@@ -113,14 +113,14 @@ git push -u origin main
 ```javascript
 export default defineConfig({
   plugins: [react()],
-  base: '/ImageSelectionTInder/', // Should match your repository name
+  base: '/ocholab-image-selector/', // Should match your repository name
 })
 ```
 
 4. Ensure your `BrowserRouter` in `main.jsx` has the correct basename:
 
 ```jsx
-<BrowserRouter basename="/ImageSelectionTInder">
+<BrowserRouter basename="/ocholab-image-selector">
   <App />
 </BrowserRouter>
 ```
@@ -218,7 +218,7 @@ git push
 
 2. Once the workflow completes successfully, go to **Settings** > **Pages** to find your deployed site URL.
 
-3. Your app should now be accessible at `https://yourusername.github.io/ImageSelectionTInder/`
+3. Your app should now be accessible at `https://yourusername.github.io/ocholab-image-selector/`
 
 ---
 
@@ -250,7 +250,7 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 
 | Issue | Solution |
 |-------|----------|
-| **404 errors after navigation** | Make sure your `vite.config.js` and `BrowserRouter` basename match your repository name. |
+| **404 errors after navigation** | Make sure your `vite.config.js` and `BrowserRouter` basename match your repository name (`ocholab-image-selector`). |
 | **Authentication issues** | Verify that your Supabase URL and anon key are correctly set in the GitHub repository secrets. |
 | **Blank page after deployment** | Check the browser console for errors. You might need to adjust the base path in your configuration. |
 | **GitHub Actions failing** | Ensure you've set up the repository secrets correctly and that your workflow file is properly formatted. |
@@ -259,6 +259,6 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 
 <div align="center">
 
-**Made with ❤️ by [Your Name]**
+**Made with ❤️ by ocholab**
 
 </div>
