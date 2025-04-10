@@ -47,7 +47,7 @@ function App() {
         <Route 
           path="/select" 
           element={
-            <ProtectedRoute session={session}>
+            <ProtectedRoute session={session} supabase={supabase}>
               <ImageSelection supabase={supabase} session={session} />
             </ProtectedRoute>
           } 
