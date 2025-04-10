@@ -6,7 +6,7 @@ import './index.css'
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <BrowserRouter basename="/ocholab-image-selector">
+    <BrowserRouter basename="/ocholab-image-selector/">
       <App />
     </BrowserRouter>
   </React.StrictMode>,
