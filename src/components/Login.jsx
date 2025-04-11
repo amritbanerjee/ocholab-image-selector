@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 const Login = ({ supabase }) => {
@@ -7,6 +7,31 @@ const Login = ({ supabase }) => {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const navigate = useNavigate()
+
+  useEffect(() => {
+    const checkSession = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
+        if (session) {
+          const { data: profile } = await supabase
+            .from('profile')
+            .select('role')
+            .eq('id', session.user.id)
+            .single()
+
+          if (profile?.role === 'admin') {
+            navigate('/home')
+          }
+        }
+      } catch (error) {
+        console.error('Session check error:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    checkSession()
+  }, [supabase, navigate])
 
   const handleLogin = async (e) => {
     e.preventDefault()
@@ -32,7 +57,7 @@ const Login = ({ supabase }) => {
         if (profileError) throw profileError
 
         if (profile?.role === 'admin') {
-          navigate('/select')
+          navigate('/home')
         } else {
           throw new Error('Oops! Sorry you do not have access to this website')
         }

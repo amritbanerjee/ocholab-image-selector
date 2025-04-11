@@ -66,7 +66,11 @@ const ProtectedRoute = ({ children, session, supabase }) => {
   }
 
   if (!session) {
-    return <Navigate to="/" replace />
+    // Check if we're already on the login page to prevent redirect loops
+    if (window.location.pathname !== '/') {
+      return <Navigate to="/" replace />
+    }
+    return null
   }
 
   if (!isAdmin) {
