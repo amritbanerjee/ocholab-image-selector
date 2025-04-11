@@ -1,6 +1,27 @@
 import { Navigate } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 
+const AccessDenied = ({ supabase }) => {
+  const handleLogout = async () => {
+    await supabase.auth.signOut()
+  }
+
+  return (
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">
+      <div className="max-w-md p-8 text-center bg-white rounded-lg shadow-md">
+        <h2 className="mb-4 text-2xl font-bold text-red-600">Access Denied</h2>
+        <p className="mb-6 text-gray-600">Oops! Sorry you do not have access to this website.</p>
+        <button
+          onClick={handleLogout}
+          className="px-4 py-2 font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+        >
+          Logout
+        </button>
+      </div>
+    </div>
+  )
+}
+
 const ProtectedRoute = ({ children, session, supabase }) => {
   const [isAdmin, setIsAdmin] = useState(false)
   const [loading, setLoading] = useState(true)
@@ -44,8 +65,12 @@ const ProtectedRoute = ({ children, session, supabase }) => {
     )
   }
 
-  if (!session || !isAdmin) {
+  if (!session) {
     return <Navigate to="/" replace />
+  }
+
+  if (!isAdmin) {
+    return <AccessDenied supabase={supabase} />
   }
 
   return children
