@@ -1,11 +1,12 @@
-import { useState, useEffect } from 'react'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { supabase } from './lib/supabaseClient'
 import Login from './components/Login'
-import ImageSelection from './components/ImageSelection'
 import ProtectedRoute from './components/ProtectedRoute'
+import ImageSelection from './components/ImageSelection'
+import DeckList from './components/pages/DeckList'
 import Navbar from './components/layout/Navbar'
 import Home from './components/pages/Home'
-import { supabase } from './lib/supabaseClient'
 
 function App() {
   const [session, setSession] = useState(null)
@@ -40,25 +41,40 @@ function App() {
   return (
     <Router basename="/ocholab-image-selector">
       <div className="min-h-screen bg-gray-100">
+        <Navbar />
         <Routes>
           <Route path="/" element={<Login supabase={supabase} />} />
           <Route
             path="/home"
             element={
               <ProtectedRoute session={session} supabase={supabase}>
-                <Navbar />
-                <Home />
+                <Home supabase={supabase} session={session} />
               </ProtectedRoute>
             }
           />
-          <Route 
-            path="/image-selection" 
+          <Route
+            path="/image-selection"
             element={
               <ProtectedRoute session={session} supabase={supabase}>
-                <Navbar />
                 <ImageSelection supabase={supabase} session={session} />
               </ProtectedRoute>
-            } 
+            }
+          />
+          <Route
+            path="/cards-for-review"
+            element={
+              <ProtectedRoute session={session} supabase={supabase}>
+                <DeckList supabase={supabase} session={session} />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/deck/:deckId/images"
+            element={
+              <ProtectedRoute session={session} supabase={supabase}>
+                <ImageSelection supabase={supabase} session={session} />
+              </ProtectedRoute>
+            }
           />
         </Routes>
       </div>

@@ -14,6 +14,9 @@ const Navbar = () => {
             <Link to="/" className="text-sm font-medium transition-colors hover:text-primary">
               Home
             </Link>
+            <Link to="/cards-for-review" className="text-sm font-medium transition-colors hover:text-primary">
+              Cards for Review
+            </Link>
             <Link to="/image-selection" className="text-sm font-medium transition-colors hover:text-primary">
               Image Selection
             </Link>

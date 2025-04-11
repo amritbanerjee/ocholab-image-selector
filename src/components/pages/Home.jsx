@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react';
-import { supabase } from '../../lib/supabaseClient';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 
-const Home = () => {
+const Home = ({ supabase }) => {
   const [stats, setStats] = useState({
     totalDecks: 0,
     totalCards: 0,
