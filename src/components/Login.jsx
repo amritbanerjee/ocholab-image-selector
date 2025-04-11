@@ -22,11 +22,16 @@ const Login = ({ supabase }) => {
       if (error) throw error
       
       if (data.user) {
-        // Fetch user's role from user_metadata
-        const { data: { user } } = await supabase.auth.getUser()
-        const isAdmin = user?.user_metadata?.role === 'admin'
+        // Fetch user's role from profile table
+        const { data: profile, error: profileError } = await supabase
+          .from('profile')
+          .select('role')
+          .eq('id', data.user.id)
+          .single()
 
-        if (isAdmin) {
+        if (profileError) throw profileError
+
+        if (profile?.role === 'admin') {
           navigate('/select')
         } else {
           throw new Error('Oops! Sorry you do not have access to this website')

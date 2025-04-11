@@ -13,8 +13,19 @@ const ProtectedRoute = ({ children, session, supabase }) => {
       }
 
       try {
-        const { data: { user } } = await supabase.auth.getUser()
-        setIsAdmin(user?.user_metadata?.role === 'admin')
+        const { data: profile, error: profileError } = await supabase
+          .from('profile')
+          .select('role')
+          .eq('id', session.user.id)
+          .single()
+
+        if (profileError) {
+          console.error('Error fetching profile:', profileError)
+          setIsAdmin(false)
+          return
+        }
+
+        setIsAdmin(profile?.role === 'admin')
       } catch (error) {
         console.error('Error checking admin role:', error)
       } finally {
