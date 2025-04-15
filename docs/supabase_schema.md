@@ -93,3 +93,21 @@
 | wip_topics                   | age_max            | integer                  | YES         | null                                                     | 8                | NO             | null                                                         |
 | wip_topics                   | difficulty         | character varying        | YES         | null                                                     | 9                | NO             | null                                                         |
 | wip_topics                   | topic_image_url    | text                     | YES         | null                                                     | 10               | NO             | null                                                         |
+
+
+
+
+
+| constraint_catalog | constraint_schema | constraint_name                                      | table_catalog | table_schema | table_name                   | column_name        | ordinal_position | position_in_unique_constraint |
+| ------------------ | ----------------- | ---------------------------------------------------- | ------------- | ------------ | ---------------------------- | ------------------ | ---------------- | ----------------------------- |
+| postgres           | public            | api_usage_user_id_fkey                               | postgres      | public       | api_usage                    | user_id            | 1                | 1                             |
+| postgres           | public            | wip_topics_user_id_fkey                              | postgres      | public       | wip_topics                   | user_id            | 1                | 1                             |
+| postgres           | public            | cards_deck_id_fkey                                   | postgres      | public       | cards                        | deck_id            | 1                | 1                             |
+| postgres           | public            | game_mode_requirements_game_mode_id_fkey             | postgres      | public       | game_mode_requirements       | game_mode_id       | 1                | 1                             |
+| postgres           | public            | profile_id_fkey                                      | postgres      | public       | profile                      | id                 | 1                | 1                             |
+| postgres           | public            | deck_categories_deck_id_fkey                         | postgres      | public       | deck_categories              | deck_id            | 1                | 1                             |
+| postgres           | public            | deck_categories_category_id_fkey                     | postgres      | public       | deck_categories              | category_id        | 1                | 1                             |
+| postgres           | public            | card_decks_card_id_fkey                              | postgres      | public       | card_decks                   | card_id            | 1                | 1                             |
+| postgres           | public            | card_decks_deck_id_fkey                              | postgres      | public       | card_decks                   | deck_id            | 1                | 1                             |
+| postgres           | public            | asset_variations_asset_type_id_fkey                  | postgres      | public       | asset_variations             | asset_type_id      | 1                | 1                             |
+| postgres           | public            | content_generation_workflows_asset_variation_id_fkey | postgres      | public       | content_generation_workflows | asset_variation_id | 1                | 1                             |
