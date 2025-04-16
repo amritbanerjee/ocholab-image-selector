@@ -7,6 +7,7 @@ import ImageSelection from './components/ImageSelection'
 import DeckList from './components/pages/DeckList'
 import Navbar from './components/layout/Navbar'
 import Home from './components/pages/Home'
+import DashboardPage from './components/pages/DashboardPage';
 
 function App() {
   const [session, setSession] = useState(null)
@@ -41,7 +42,7 @@ function App() {
   return (
     <Router basename="/ocholab-image-selector">
       <div className="min-h-screen bg-gray-100">
-        <Navbar />
+        {window.location.pathname !== "/ocholab-image-selector/dashboard" && <Navbar />}
         <Routes>
           <Route path="/" element={<Login supabase={supabase} />} />
           <Route
@@ -49,6 +50,14 @@ function App() {
             element={
               <ProtectedRoute session={session} supabase={supabase}>
                 <Home supabase={supabase} session={session} />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute session={session} supabase={supabase}>
+                <DashboardPage supabase={supabase} session={session} />
               </ProtectedRoute>
             }
           />
