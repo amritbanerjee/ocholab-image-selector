@@ -7,8 +7,6 @@ const DeckList = ({ supabase, session }) => {
   const [error, setError] = useState(null)
   const navigate = useNavigate()
 
-// ... existing imports and state ...
-
 useEffect(() => {
   const fetchDecks = async () => {
     try {
@@ -72,10 +70,8 @@ useEffect(() => {
   fetchDecks();
 }, [supabase]);
 
-// ... rest of the component ...
-
-  const handleDeckClick = (deckId) => {
-    navigate(`/deck/${deckId}/images`)
+  const handleDeckClick = (deckId, deckTitle) => {
+    navigate(`/deck/${deckId}/images`, { state: { deckName: deckTitle } })
   }
 
   if (loading) {
@@ -96,8 +92,6 @@ useEffect(() => {
     )
   }
 
-// ... existing code ...
-
 return (
   <div className="container mx-auto px-4 py-8">
     <h1 className="text-2xl font-bold mb-6">Available Decks for Review</h1>
@@ -105,7 +99,7 @@ return (
       {decks.map((deck) => (
         <button
           key={deck.id}
-          onClick={() => handleDeckClick(deck.id)}
+          onClick={() => handleDeckClick(deck.id, deck.title)}
           className="p-6 bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow"
         >
           <h2 className="text-xl font-semibold mb-2">{deck.title}</h2>

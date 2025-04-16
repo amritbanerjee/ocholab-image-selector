@@ -1,94 +1,84 @@
 import { useState, useEffect } from 'react'
 import { useSwipeable } from 'react-swipeable'
-import { useParams } from 'react-router-dom'
+import { useParams, useLocation } from 'react-router-dom'
 
 const ImageSelection = ({ supabase, session }) => {
-  const [images, setImages] = useState([])
+  const [cards, setCards] = useState([])
   const [currentIndex, setCurrentIndex] = useState(0)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const { deckId } = useParams()
+  const location = useLocation()
+  const deckName = location.state?.deckName || 'Deck'
 
   useEffect(() => {
-    // In a real app, you would fetch images from Supabase
-    // This is a placeholder implementation
-    const fetchImages = async () => {
+    const fetchCards = async () => {
       setLoading(true)
       try {
-        // Example of how you might fetch images from Supabase
-        // const { data, error } = await supabase
-        //   .from('images')
-        //   .select('*')
-        //   .order('created_at', { ascending: false })
-
-        // if (error) throw error
-        
-        // Placeholder data
+        // Fetch cards for this deck
         const { data, error } = await supabase
           .from('cards')
-          .select('*')
+          .select('*, deck_id')
           .eq('status', 'choosebaseimage')
           .eq('deck_id', deckId)
-          
         if (error) throw error
-        
+        // Get all title_keys
+        const titleKeys = data.map(card => card.title_key).filter(Boolean)
+        // Fetch translations for all title_keys
+        let translationMap = {}
+        if (titleKeys.length > 0) {
+          const { data: translations, error: translationsError } = await supabase
+            .from('translations_en')
+            .select('key, value')
+            .in('key', titleKeys)
+          if (translationsError) throw translationsError
+          translationMap = translations.reduce((acc, item) => {
+            acc[item.key] = item.value
+            return acc
+          }, {})
+        }
         const cardsWithImages = data.map(card => {
+          let assetData = {}
           try {
-            // Handle case where asset_url is already an object
-            const assetData = typeof card.asset_url === 'string' 
-              ? JSON.parse(card.asset_url) 
-              : card.asset_url;
-              
-            return {
-              ...card,
-              images: Object.entries(assetData).map(([key, url]) => ({
-                id: key,
-                url,
-                title: key
-              }))
-            }
+            assetData = typeof card.asset_url === 'string' ? JSON.parse(card.asset_url) : card.asset_url
           } catch (parseError) {
-            console.error('Error parsing asset_url:', parseError)
-            return {
-              ...card,
-              images: []
-            }
+            assetData = {}
+          }
+          return {
+            ...card,
+            images: Object.entries(assetData).map(([key, url]) => ({
+              id: key,
+              url,
+              title: key
+            })),
+            cardName: card.title_key ? translationMap[card.title_key] || `ID: ${card.id}` : `ID: ${card.id}`
           }
         })
-
-        setImages(cardsWithImages)
+        setCards(cardsWithImages)
       } catch (error) {
         setError(error.message)
       } finally {
         setLoading(false)
       }
     }
-
-    fetchImages()
-  }, [supabase])
+    fetchCards()
+  }, [supabase, deckId])
 
   const handleImageSelect = async (selectedImage) => {
     try {
-      // Update card in Supabase with selected image
       const { error } = await supabase
         .from('cards')
-        .update({ 
+        .update({
           status: 'imagechosen',
           selected_image: selectedImage.url,
           asset_url: JSON.stringify({
             selected: selectedImage.url,
-            ...images[currentIndex].images.reduce((acc, img) => ({
-              ...acc,
-              [img.id]: img.url
-            }), {})
+            ...cards[currentIndex].images.reduce((acc, img) => ({ ...acc, [img.id]: img.url }), {})
           })
         })
-        .eq('id', images[currentIndex].id)
-      
+        .eq('id', cards[currentIndex].id)
       if (error) throw error
-      
-      // Move to next card
-      if (currentIndex < images.length - 1) {
+      if (currentIndex < cards.length - 1) {
         setCurrentIndex(currentIndex + 1)
       }
     } catch (error) {
@@ -96,21 +86,16 @@ const ImageSelection = ({ supabase, session }) => {
     }
   }
 
-  const handleLike = () => {
-    if (currentIndex < images.length - 1) {
-      setCurrentIndex(currentIndex + 1)
-    }
+  const handlePrev = () => {
+    setCurrentIndex((prev) => (prev === 0 ? cards.length - 1 : prev - 1))
   }
-
-  const handleDislike = () => {
-    if (currentIndex < images.length - 1) {
-      setCurrentIndex(currentIndex + 1)
-    }
+  const handleNext = () => {
+    setCurrentIndex((prev) => (prev === cards.length - 1 ? 0 : prev + 1))
   }
 
   const handlers = useSwipeable({
-    onSwipedLeft: () => handleDislike(),
-    onSwipedRight: () => handleLike(),
+    onSwipedLeft: handleNext,
+    onSwipedRight: handlePrev,
     preventDefaultTouchmoveEvent: true,
     trackMouse: true
   })
@@ -122,7 +107,6 @@ const ImageSelection = ({ supabase, session }) => {
       </div>
     )
   }
-
   if (error) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -132,8 +116,7 @@ const ImageSelection = ({ supabase, session }) => {
       </div>
     )
   }
-
-  if (images.length === 0) {
+  if (cards.length === 0) {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="p-4 text-sm text-gray-700 bg-gray-100 rounded-lg" role="alert">
@@ -142,8 +125,7 @@ const ImageSelection = ({ supabase, session }) => {
       </div>
     )
   }
-
-  if (currentIndex >= images.length) {
+  if (currentIndex >= cards.length) {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="p-4 text-sm text-green-700 bg-green-100 rounded-lg" role="alert">
@@ -152,74 +134,55 @@ const ImageSelection = ({ supabase, session }) => {
       </div>
     )
   }
-
+  const card = cards[currentIndex]
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 p-4">
-      <h1 className="text-2xl font-bold text-gray-900 mb-8">Image Selection</h1>
-      
-      <div className="flex items-center justify-center space-x-4 w-full max-w-2xl">
-        <button 
-          onClick={() => currentIndex > 0 && setCurrentIndex(currentIndex - 1)}
-          className="p-2 text-gray-700 hover:text-gray-900 disabled:opacity-50"
-          disabled={currentIndex === 0}
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-          </svg>
-        </button>
-        
-        <div className="grid grid-cols-2 gap-4 w-full">
-        {images[currentIndex].images.map((image) => (
-          <div 
-            key={image.id}
-            className="relative aspect-[3/4] bg-white rounded-lg shadow-lg overflow-hidden"
-            onClick={() => handleImageSelect(image)}
-          >
-            <img 
-              src={image.url} 
-              alt={image.title}
-              className="w-full h-full object-contain"
-            />
-            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-4">
-              <h2 className="text-xl font-semibold text-white">{image.title}</h2>
-            </div>
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 p-4 pt-20" {...handlers}>
+      <div className="w-full max-w-2xl mb-6">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4">
+          <h1 className="text-2xl font-bold text-gray-900">{deckName}</h1>
+          <span className="text-lg text-gray-700 font-medium mt-2 md:mt-0">{card.cardName}</span>
+        </div>
+        <div className="flex items-center justify-center space-x-4">
+          <button onClick={handlePrev} className="p-2 text-gray-700 hover:text-gray-900 disabled:opacity-50" disabled={cards.length <= 1}>
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+          <div className="grid grid-cols-2 gap-4 w-full">
+            {card.images.map((image) => (
+              <div
+                key={image.id}
+                className="relative aspect-[3/4] bg-white rounded-lg shadow-lg overflow-hidden cursor-pointer hover:ring-4 hover:ring-blue-300 transition"
+                onClick={() => handleImageSelect(image)}
+              >
+                <img src={image.url} alt={image.title} className="w-full h-full object-contain" />
+                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-4">
+                  <h2 className="text-xl font-semibold text-white">{image.title}</h2>
+                </div>
+              </div>
+            ))}
           </div>
-        ))}
+          <button onClick={handleNext} className="p-2 text-gray-700 hover:text-gray-900 disabled:opacity-50" disabled={cards.length <= 1}>
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
+        </div>
       </div>
-      
-      <button 
-        onClick={() => currentIndex < images.length - 1 && setCurrentIndex(currentIndex + 1)}
-        className="p-2 text-gray-700 hover:text-gray-900 disabled:opacity-50"
-        disabled={currentIndex === images.length - 1}
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-        </svg>
-      </button>
-      
-      </div>
-
       <div className="flex justify-center space-x-8 mt-8">
-        <button 
-          onClick={handleDislike}
-          className="p-4 bg-red-500 text-white rounded-full shadow-md hover:bg-red-600 transition-colors"
-        >
+        <button onClick={handlePrev} className="p-4 bg-red-500 text-white rounded-full shadow-md hover:bg-red-600 transition-colors" disabled={cards.length <= 1}>
           <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
           </svg>
         </button>
-        <button 
-          onClick={handleLike}
-          className="p-4 bg-green-500 text-white rounded-full shadow-md hover:bg-green-600 transition-colors"
-        >
+        <button onClick={handleNext} className="p-4 bg-green-500 text-white rounded-full shadow-md hover:bg-green-600 transition-colors" disabled={cards.length <= 1}>
           <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
           </svg>
         </button>
       </div>
-
       <div className="mt-6 text-gray-600">
-        Image {currentIndex + 1} of {images.length}
+        Card {currentIndex + 1} of {cards.length}
       </div>
     </div>
   )
