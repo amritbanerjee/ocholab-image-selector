@@ -1,296 +1,407 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
-import DeckList from './DeckList';
+// Assuming you have an icon library like react-icons
+import { FiHome, FiClock, FiCalendar, FiSettings, FiGrid, FiBarChart2, FiUsers, FiBell, FiPlus, FiMoreHorizontal, FiArrowLeft, FiArrowRight, FiTrendingDown, FiTrendingUp, FiCheckCircle, FiXCircle } from 'react-icons/fi';
+import { FaPaypal, FaCcVisa, FaGoogle, FaApple, FaCcMastercard } from 'react-icons/fa';
 
+// Updated Sidebar with icons and styling closer to the image
 const Sidebar = () => (
-  <aside className="flex flex-col items-center bg-gradient-to-b from-gray-950 via-gray-900 to-gray-800 text-white w-20 py-6 space-y-6 min-h-screen shadow-xl">
+  <aside className="flex flex-col items-center bg-[#1a1d21] text-gray-400 w-20 py-6 space-y-6 min-h-screen shadow-lg">
     <div className="mb-8">
-      <svg width="32" height="32" fill="none" viewBox="0 0 24 24"><rect width="24" height="24" rx="6" fill="#23272f"/><path d="M7 8h10M7 12h10M7 16h6" stroke="#fff" strokeWidth="2" strokeLinecap="round"/></svg>
+      {/* Placeholder Logo */}
+      <svg width="32" height="32" fill="none" viewBox="0 0 24 24"><rect width="24" height="24" rx="6" fill="#3b82f6"/><path d="M7 8h10M7 12h10M7 16h6" stroke="#fff" strokeWidth="2" strokeLinecap="round"/></svg>
     </div>
-    <nav className="flex flex-col space-y-8">
-      <button className="hover:text-gray-300 transition-colors"><svg width="24" height="24" fill="none" viewBox="0 0 24 24"><path d="M3 12l9-9 9 9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/><path d="M9 21V9h6v12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg></button>
-      <button className="hover:text-gray-300 transition-colors"><svg width="24" height="24" fill="none" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2"/><path d="M12 8v4l3 3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg></button>
-      <button className="hover:text-gray-300 transition-colors"><svg width="24" height="24" fill="none" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" strokeWidth="2"/><path d="M3 9h18" stroke="currentColor" strokeWidth="2"/><path d="M9 21V9" stroke="currentColor" strokeWidth="2"/></svg></button>
-      <button className="hover:text-gray-300 transition-colors"><svg width="24" height="24" fill="none" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2"/><path d="M15 9l-6 6M9 9l6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg></button>
+    <nav className="flex flex-col items-center space-y-6 flex-1">
+      <button className="p-2 rounded-lg text-gray-400 hover:bg-gray-700 hover:text-white transition-colors"><FiGrid size={24} /></button>
+      <button className="p-2 rounded-lg text-gray-400 hover:bg-gray-700 hover:text-white transition-colors"><FiBarChart2 size={24} /></button>
+      <button className="p-2 rounded-lg text-gray-400 hover:bg-gray-700 hover:text-white transition-colors"><FiCalendar size={24} /></button>
+      <button className="p-2 rounded-lg text-gray-400 hover:bg-gray-700 hover:text-white transition-colors"><FiClock size={24} /></button>
+      {/* Add more icons as needed based on image */}
     </nav>
-    <div className="mt-auto">
-      <img src="https://randomuser.me/api/portraits/men/32.jpg" alt="User" className="w-10 h-10 rounded-full border-2 border-gray-700 shadow-lg" />
+    <div className="mt-auto flex flex-col items-center space-y-6">
+       <button className="p-2 rounded-lg text-gray-400 hover:bg-gray-700 hover:text-white transition-colors"><FiSettings size={24} /></button>
+      <img src="https://randomuser.me/api/portraits/men/32.jpg" alt="User" className="w-10 h-10 rounded-full border-2 border-gray-600 shadow-md" />
     </div>
   </aside>
 );
 
-const Navbar = () => (
-  <header className="flex items-center justify-between bg-gradient-to-r from-gray-950 via-gray-900 to-gray-950 text-white px-8 py-4 shadow-lg border-b border-gray-800">
+// Updated Navbar - Separated Header and Navigation
+const Header = ({ userName }) => (
+  <header className="flex items-center justify-between bg-[#1f2328] text-white px-8 py-4 shadow-md border-b border-gray-700">
     <div>
-      <h2 className="text-lg font-semibold text-white">Hey there, Brian Ford!</h2>
+      <h1 className="text-xl font-semibold text-white">Hey there, {userName || 'User'}!</h1>
       <p className="text-sm text-gray-400">Welcome back, we're happy to have you here!</p>
+    </div>
+    <div className="flex items-center space-x-2">
+      <button className="bg-gray-700 hover:bg-gray-600 text-white text-sm font-medium py-2 px-4 rounded-lg transition-colors">Edit section</button>
+      <button className="bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium py-2 px-4 rounded-lg transition-colors">Add item</button>
+      <button className="text-gray-400 hover:text-white p-2 rounded-lg hover:bg-gray-700 transition-colors"><FiMoreHorizontal size={20} /></button>
     </div>
   </header>
 );
 
+const NavigationTabs = () => (
+  <nav className="flex space-x-6 px-8 py-3 bg-[#1f2328] border-b border-gray-700 shadow-sm">
+    <a href="#" className="text-gray-400 hover:text-white transition-colors">My Tasks</a>
+    <a href="#" className="text-white font-semibold border-b-2 border-blue-500 pb-1">Profile</a>
+    <a href="#" className="text-gray-400 hover:text-white transition-colors">Stats</a>
+    <a href="#" className="text-gray-400 hover:text-white transition-colors">Inbox</a>
+    <a href="#" className="text-gray-400 hover:text-white transition-colors">Team</a>
+    <a href="#" className="relative text-gray-400 hover:text-white transition-colors">
+      Notifications
+      <span className="absolute -top-1 -right-3 bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5">9</span>
+    </a>
+    <a href="#" className="text-gray-400 hover:text-white transition-colors">Settings</a>
+  </nav>
+);
+
+// Helper to format currency
+const formatCurrency = (amount) => {
+  return `$${Math.abs(amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+};
+
+// Updated Stat Card component
+const StatCard = ({ title, value, change, changeType, icon }) => (
+  <Card className="bg-[#1f2328] border border-gray-700 text-white shadow-md rounded-lg overflow-hidden">
+    <CardContent className="p-4 flex items-center justify-between">
+      <div className="flex items-center space-x-3">
+         <div className="p-2 bg-blue-600/20 text-blue-500 rounded-lg">
+           {icon}
+         </div>
+         <div>
+           <p className="text-3xl font-bold">{value}</p>
+           <p className="text-sm text-gray-400">{title}</p>
+         </div>
+      </div>
+      {change && (
+        <span className={`flex items-center text-xs font-medium px-2 py-1 rounded-full ${changeType === 'loss' ? 'bg-red-500/20 text-red-400' : 'bg-green-500/20 text-green-400'}`}>
+          {changeType === 'loss' ? <FiTrendingDown className="mr-1" /> : <FiTrendingUp className="mr-1" />}
+          {change}
+        </span>
+      )}
+    </CardContent>
+  </Card>
+);
+
+// Mock data for Lookscout and Achievements
+const lookscoutMembers = [
+  { id: 1, img: 'https://randomuser.me/api/portraits/women/65.jpg' },
+  { id: 2, img: 'https://randomuser.me/api/portraits/men/32.jpg' },
+  { id: 3, img: 'https://randomuser.me/api/portraits/women/44.jpg' },
+  { id: 4, img: 'https://randomuser.me/api/portraits/men/75.jpg' },
+  { id: 5, img: 'https://randomuser.me/api/portraits/women/12.jpg' },
+  { id: 6, img: 'https://randomuser.me/api/portraits/men/5.jpg' },
+];
+
+const achievements = [
+  { id: 1, icon: <FiGrid size={20} className="text-red-500"/>, title: 'Global Stars', description: 'A brief feature description' },
+  { id: 2, icon: <FiCheckCircle size={20} className="text-green-500"/>, title: 'Focus Keeper', description: 'A brief feature description' },
+  { id: 3, icon: <FiXCircle size={20} className="text-blue-500"/>, title: 'High Tower', description: 'A brief feature description' },
+];
+
+// Circular progress gauge component (simplified)
+const ProgressGauge = ({ percentage, label = "My Stats" }) => {
+  const radius = 50;
+  const stroke = 10;
+  const normalizedRadius = radius - stroke / 2;
+  const circumference = normalizedRadius * 2 * Math.PI;
+  const strokeDashoffset = circumference - (percentage / 100) * circumference;
+
+  return (
+    <div className="relative flex items-center justify-center w-32 h-32 mx-auto my-4">
+      <svg height={radius * 2} width={radius * 2} className="transform -rotate-90">
+        <circle
+          stroke="#374151" // gray-700
+          fill="transparent"
+          strokeWidth={stroke}
+          r={normalizedRadius}
+          cx={radius}
+          cy={radius}
+        />
+        <circle
+          stroke="#3b82f6" // blue-500
+          fill="transparent"
+          strokeWidth={stroke}
+          strokeDasharray={circumference + ' ' + circumference}
+          style={{ strokeDashoffset, transition: 'stroke-dashoffset 0.5s ease-in-out' }}
+          strokeLinecap="round"
+          r={normalizedRadius}
+          cx={radius}
+          cy={radius}
+        />
+      </svg>
+      <div className="absolute flex flex-col items-center justify-center">
+        <span className="text-3xl font-bold text-white">{percentage}%</span>
+        <span className="text-xs text-gray-400">{label}</span>
+      </div>
+    </div>
+  );
+};
+
+// Payment Icon Helper
+const getPaymentIcon = (account) => {
+  if (!account) return null;
+  const lowerCaseAccount = account.toLowerCase();
+  if (lowerCaseAccount.includes('visa')) return <FaCcVisa className="text-blue-500" size={20} />;
+  if (lowerCaseAccount.includes('google pay')) return <FaGoogle className="text-gray-400" size={20} />;
+  if (lowerCaseAccount.includes('paypal')) return <FaPaypal className="text-blue-400" size={20} />;
+  if (lowerCaseAccount.includes('maestro')) return <FaCcMastercard className="text-orange-500" size={20} />; // Using Mastercard as proxy
+  if (lowerCaseAccount.includes('apple pay')) return <FaApple className="text-gray-300" size={20} />;
+  if (lowerCaseAccount.includes('mastercard')) return <FaCcMastercard className="text-orange-500" size={20} />;
+  return null;
+};
+
 const DashboardPage = ({ supabase, session }) => {
   const [stats, setStats] = useState({
-    totalDecks: 0,
-    totalCards: 0,
-    cardsForReview: 0
+    totalDecks: 0, // Renamed from totalExpenses1
+    totalCards: 0, // Renamed from totalExpenses2
+    cardsForReview: 0, // Renamed from totalExpenses3
+    reviewProgress: 0, // Added for progress gauge
   });
-  const [decks, setDecks] = useState([]);
-  const [deckStats, setDeckStats] = useState([]); // [{id, title, totalCards, cardsForReview}]
+  const [transactions, setTransactions] = useState([]); // Will be populated by Supabase
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
-  const [selectedDeck, setSelectedDeck] = useState(null);
-  // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
-  const decksPerPage = 9; // Increased to show more items per page
-  const totalPages = Math.ceil(deckStats.length / decksPerPage);
-  const paginatedDeckStats = deckStats.slice((currentPage - 1) * decksPerPage, currentPage * decksPerPage);
+  const itemsPerPage = 7; // Match image
+  const userName = session?.user?.user_metadata?.full_name || session?.user?.email;
 
+  // Fetch data from Supabase
   useEffect(() => {
-    const fetchStatsAndDecks = async () => {
+    const fetchData = async () => {
+      setLoading(true);
+      setError(null);
       try {
-        setLoading(true);
-        // Get cards with deck info to extract title_keys and created_at
-        const { data, error } = await supabase
+        // Fetch stats (similar to Home.jsx)
+        const { count: decksCount, error: decksError } = await supabase
+          .from('decks')
+          .select('id', { count: 'exact', head: true });
+        if (decksError) throw decksError;
+
+        const { count: cardsCount, error: cardsError } = await supabase
           .from('cards')
-          .select(`
-            deck_id,
-            decks!deck_id(
-              id,
-              title_key,
-              created_at
-            )
-          `)
+          .select('id', { count: 'exact', head: true });
+        if (cardsError) throw cardsError;
+
+        const { count: reviewCount, error: reviewError } = await supabase
+          .from('cards')
+          .select('id', { count: 'exact', head: true })
           .eq('status', 'choosebaseimage');
-        if (error) throw error;
-        // Extract unique title_keys and deck_ids
-        const titleKeys = [...new Set(data.map(card => card.decks?.title_key))].filter(Boolean);
-        const sanitizedTitleKeys = titleKeys.map(key => encodeURIComponent(key));
-        // Fetch translations for these title_keys
-        const { data: translations, error: translationsError } = await supabase
-          .from('translations_en')
-          .select('key, value')
-          .in('key', sanitizedTitleKeys)
-          .limit(1000);
-        if (translationsError) throw translationsError;
-        // Map back to original keys for display
-        const translationMap = translations?.reduce((acc, item) => {
-          acc[decodeURIComponent(item.key)] = item.value;
-          return acc;
-        }, {});
-        // Aggregate deck stats
-        const deckMap = {};
-        data.forEach(card => {
-          const deckId = card.deck_id;
-          if (!deckMap[deckId]) {
-            deckMap[deckId] = {
-              id: deckId,
-              title: card.decks?.title_key ? translationMap?.[card.decks.title_key] || `Deck ${deckId}` : `Deck ${deckId}`,
-              totalCards: 0,
-              createdAt: card.decks?.created_at,
-              cardsForReview: 0
-            };
-          }
-          deckMap[deckId].totalCards += 1;
-          deckMap[deckId].cardsForReview += 1;
-        });
-        const deckStatsArr = Object.values(deckMap).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-        setDecks(deckStatsArr.map(({id, title}) => ({id, title})));
-        setDeckStats(deckStatsArr);
+        if (reviewError) throw reviewError;
+
+        // Fetch mock transactions (replace with actual Supabase query if needed)
+        // For now, using the previous mock data structure but fetched async
+        const mockTransactions = [
+          { id: 1, name: 'Grand Rapids', amount: 6320.53, date: 'Wed 1:00 pm', account: 'Visa 1234', expire: '24/2032', avatar: 'https://randomuser.me/api/portraits/men/75.jpg' },
+          { id: 2, name: 'Bell Gardens', amount: 6471.39, date: 'Wed 1:00 pm', account: 'Google Pay 1234', expire: '24/2032', avatar: 'https://randomuser.me/api/portraits/women/44.jpg' },
+          { id: 3, name: 'Broomfield', amount: -2223.9, date: 'Wed 7:20 pm', account: 'PayPal 1234', expire: '24/2032', avatar: 'https://randomuser.me/api/portraits/men/32.jpg' },
+          { id: 4, name: 'Yakima', amount: 7344.50, date: 'Wed 1:00 pm', account: 'Maestro 1234', expire: '24/2032', avatar: 'https://randomuser.me/api/portraits/men/5.jpg' },
+          { id: 5, name: 'Springfield', amount: -6157.14, date: 'Wed 7:20 pm', account: 'Apple Pay 1234', expire: '24/2032', avatar: 'https://randomuser.me/api/portraits/women/65.jpg' },
+          { id: 6, name: 'Alexandria', amount: -6780.52, date: 'Wed 1:00 pm', account: 'Mastercard 1234', expire: '24/2032', avatar: 'https://randomuser.me/api/portraits/women/12.jpg' },
+          { id: 7, name: 'Kalamazoo', amount: -2263.72, date: 'Wed 7:20 pm', account: 'Visa 1234', expire: '24/2032', avatar: 'https://randomuser.me/api/portraits/women/33.jpg' },
+          { id: 8, name: 'Transaction 8', amount: 100.00, date: 'Thu 9:00 am', account: 'Visa 5678', expire: '12/2025', avatar: 'https://randomuser.me/api/portraits/men/11.jpg' },
+          { id: 9, name: 'Transaction 9', amount: -50.25, date: 'Thu 10:30 am', account: 'PayPal 5678', expire: '12/2025', avatar: 'https://randomuser.me/api/portraits/women/22.jpg' },
+          { id: 10, name: 'Transaction 10', amount: 250.75, date: 'Thu 1:15 pm', account: 'Mastercard 5678', expire: '12/2025', avatar: 'https://randomuser.me/api/portraits/men/33.jpg' },
+        ];
+        setTransactions(mockTransactions);
+
+        // Calculate review progress (example: percentage of cards reviewed)
+        // This needs a proper calculation based on your data model
+        const totalReviewed = cardsCount - reviewCount; // Example calculation
+        const reviewProgress = cardsCount > 0 ? Math.round((totalReviewed / cardsCount) * 100) : 0;
+
         setStats({
-          totalDecks: deckStatsArr.length,
-          totalCards: data.length,
-          cardsForReview: data.length
+          totalDecks: decksCount || 0,
+          totalCards: cardsCount || 0,
+          cardsForReview: reviewCount || 0,
+          reviewProgress: reviewProgress,
         });
+
       } catch (err) {
-        setError(err.message);
+        console.error('Error fetching dashboard data:', err);
+        setError(err.message || 'Failed to fetch data');
       } finally {
         setLoading(false);
       }
     };
-    fetchStatsAndDecks();
-  }, [supabase]);
 
-  const handleDeckClick = (deckId, deckTitle) => {
-    navigate(`/deck/${deckId}/images`, { state: { deckName: deckTitle } });
-  };
+    if (supabase && session) {
+      fetchData();
+    }
+  }, [supabase, session]);
 
-  // Circular progress helper
-  const CircularProgress = ({ value, total, color, label }) => {
-    const percent = total === 0 ? 0 : Math.round((value / total) * 100);
-    const radius = 40;
-    const stroke = 8;
-    const normalizedRadius = radius - stroke / 2;
-    const circumference = normalizedRadius * 2 * Math.PI;
-    const strokeDashoffset = circumference - (percent / 100) * circumference;
-    return (
-      <div className="flex flex-col items-center">
-        <svg height={radius * 2} width={radius * 2}>
-          <circle
-            stroke="#2d2d2d"
-            fill="transparent"
-            strokeWidth={stroke}
-            r={normalizedRadius}
-            cx={radius}
-            cy={radius}
-          />
-          <circle
-            stroke={color}
-            fill="transparent"
-            strokeWidth={stroke}
-            strokeDasharray={circumference + ' ' + circumference}
-            style={{ strokeDashoffset, transition: 'stroke-dashoffset 0.5s' }}
-            r={normalizedRadius}
-            cx={radius}
-            cy={radius}
-          />
-        </svg>
-        <span className="text-xl font-bold mt-2" style={{ color }}>{percent}%</span>
-        <span className="text-xs text-gray-400 mt-1 text-center">{label}</span>
-      </div>
-    );
-  };
-
-  // Memoized selected deck stats
-  const selectedDeckStats = useMemo(() => {
-    if (!selectedDeck) return null;
-    return deckStats.find(d => d.id === selectedDeck);
-  }, [selectedDeck, deckStats]);
+  // Pagination logic for transactions
+  const totalPages = Math.ceil(transactions.length / itemsPerPage);
+  const paginatedTransactions = transactions.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   return (
-    <div className="flex h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-gray-800">
+    <div className="flex h-screen bg-[#16181c] overflow-hidden">
       <Sidebar />
       <div className="flex-1 flex flex-col min-h-0">
-        <Navbar />
-        {/* Top 3 summary cards */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 px-8 pt-8 pb-4">
-          <Card className="bg-gradient-to-br from-gray-900 via-gray-950 to-gray-900 border-gray-800 text-white shadow-lg">
-            <CardHeader>
-              <CardTitle>Total Decks</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-3xl font-bold">{stats.totalDecks}</p>
-            </CardContent>
-          </Card>
-          <Card className="bg-gradient-to-br from-gray-900 via-gray-950 to-gray-900 border-gray-800 text-white shadow-lg">
-            <CardHeader>
-              <CardTitle>Total Cards</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-3xl font-bold">{stats.totalCards}</p>
-            </CardContent>
-          </Card>
-          <Card className="bg-gradient-to-br from-gray-900 via-gray-950 to-gray-900 border-gray-800 text-white shadow-lg">
-            <CardHeader>
-              <CardTitle>Cards for Review</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-3xl font-bold">{stats.cardsForReview}</p>
-            </CardContent>
-          </Card>
-        </div>
-        <main className="flex flex-1 flex-row gap-8 p-8 bg-transparent min-h-0 max-h-[calc(100vh-120px)] overflow-hidden">
-          {/* Left: Circular Graphs */}
-          <section className="w-72 flex flex-col gap-8 items-center justify-end bg-gradient-to-b from-gray-900 via-gray-950 to-gray-900 rounded-lg p-6 shadow-xl border border-gray-800 h-full max-h-full sticky bottom-0 overflow-y-auto">
-            <CircularProgress
-              value={decks.length}
-              total={stats.totalDecks}
-              color="#38bdf8"
-              label="Decks with Cards Generated"
-            />
-            <CircularProgress
-              value={stats.cardsForReview}
-              total={stats.totalCards}
-              color="#fbbf24"
-              label="Cards Ready for Review"
-            />
-            <CircularProgress
-              value={selectedDeckStats?.cardsForReview || 0}
-              total={selectedDeckStats?.totalCards || 1}
-              color="#34d399"
-              label={selectedDeckStats ? `Cards Ready in ${selectedDeckStats.title}` : 'Select a Deck'}
-            />
-          </section>
-          {/* Center: Decks Table */}
-          <section className="flex-1 flex flex-col min-h-0 max-h-full justify-between">
-            <Card className="flex flex-col h-full bg-gradient-to-br from-gray-900 via-gray-950 to-gray-900 border border-gray-800 shadow-xl rounded-lg p-6">
-              <div className="flex flex-col h-full min-h-0">
-                <h2 className="text-xl font-bold mb-4 text-gray-100">Decks for Review</h2>
-                {loading ? (
-                  <div className="flex items-center justify-center h-32">
-                    <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-gray-500"></div>
+        <Header userName={userName} />
+        <NavigationTabs />
+        {/* Main content area */}
+        <div className="flex-1 p-6 space-y-6 overflow-y-auto">
+          {/* Top 3 summary cards - Updated with Supabase data */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <StatCard title="Total Decks" value={stats.totalDecks} icon={<FiGrid size={20} />} />
+            <StatCard title="Total Cards" value={stats.totalCards} icon={<FiBarChart2 size={20} />} />
+            <StatCard title="Cards for Review" value={stats.cardsForReview} icon={<FiClock size={20} />} />
+          </div>
+
+          {/* Main content grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Left Column */}
+            <div className="lg:col-span-1 space-y-6">
+              {/* Lookscout Card */}
+              <Card className="bg-[#1f2328] border border-gray-700 text-white shadow-md rounded-lg p-4">
+                <CardHeader className="p-0 mb-3">
+                  <CardTitle className="text-lg font-semibold">Lookscout</CardTitle>
+                  <p className="text-sm text-gray-400">We make you create, not to be worried about technical stuff.</p>
+                </CardHeader>
+                <CardContent className="p-0">
+                  <div className="flex -space-x-2 mb-4">
+                    {lookscoutMembers.map(member => (
+                      <img key={member.id} src={member.img} alt="Member" className="w-8 h-8 rounded-full border-2 border-[#1f2328]" />
+                    ))}
                   </div>
-                ) : error ? (
-                  <div className="p-4 text-sm text-red-700 bg-red-100 rounded-lg" role="alert">
-                    Error loading decks: {error}
+                  <button className="w-full bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium py-2 px-4 rounded-lg transition-colors">View all</button>
+                </CardContent>
+              </Card>
+
+              {/* Achievements Card */}
+              <Card className="bg-[#1f2328] border border-gray-700 text-white shadow-md rounded-lg p-4">
+                <CardHeader className="flex flex-row items-center justify-between p-0 mb-3">
+                  <CardTitle className="text-lg font-semibold">Achievements</CardTitle>
+                  <button className="text-gray-400 hover:text-white"><FiMoreHorizontal size={20} /></button>
+                </CardHeader>
+                <CardContent className="p-0">
+                  <p className="text-sm text-gray-400 mb-2">Review Progress</p> {/* Updated label */}
+                  <ProgressGauge percentage={stats.reviewProgress} label="Reviewed" /> {/* Use dynamic percentage */}
+                  <ul className="space-y-3 mt-4">
+                    {achievements.map(ach => (
+                      <li key={ach.id} className="flex items-center justify-between group cursor-pointer">
+                        <div className="flex items-center space-x-3">
+                          <div className="p-1.5 bg-gray-700/50 rounded-md">{ach.icon}</div>
+                          <div>
+                            <p className="text-sm font-medium text-white">{ach.title}</p>
+                            <p className="text-xs text-gray-400">{ach.description}</p>
+                          </div>
+                        </div>
+                        <FiArrowRight size={16} className="text-gray-600 group-hover:text-white transition-colors" />
+                      </li>
+                    ))}
+                  </ul>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Right Column (Transactions) */}
+            <div className="lg:col-span-2">
+              <Card className="bg-[#1f2328] border border-gray-700 text-white shadow-md rounded-lg h-full flex flex-col">
+                <CardHeader className="flex flex-row items-center justify-between p-4 border-b border-gray-700">
+                  <div className="flex items-center space-x-2">
+                     <div className="w-6 h-6 bg-gray-700 rounded flex items-center justify-center">
+                       <FiSettings size={14} className="text-gray-400"/>
+                     </div>
+                     <span className="text-sm text-gray-400">We protect your personal information.</span>
+                     <a href="#" className="text-sm text-blue-500 hover:underline">Privacy Policy</a>
                   </div>
-                ) : (
-                  <div className="flex flex-col h-full min-h-0">
-                    <div className="overflow-x-auto rounded-lg shadow border border-gray-800 bg-gradient-to-br from-gray-900 via-gray-950 to-gray-900 flex-1 min-w-0 w-full mx-auto max-h-[calc(100vh-320px)]">
-                      <table className="min-w-full w-full divide-y divide-gray-800 h-full table-fixed">
-                        <thead>
+                  <div className="flex items-center space-x-2">
+                    <button className="text-gray-400 hover:text-white"><FiPlus size={20} /></button>
+                  </div>
+                </CardHeader>
+                <CardHeader className="flex flex-row items-center justify-between p-4 border-b border-gray-700">
+                  <CardTitle className="text-lg font-semibold">Transactions</CardTitle>
+                  <button className="text-gray-400 hover:text-white"><FiMoreHorizontal size={20} /></button>
+                </CardHeader>
+                <CardContent className="p-0 flex-1 flex flex-col min-h-0">
+                  {loading ? (
+                    <div className="flex items-center justify-center flex-1">
+                      <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-gray-500"></div>
+                    </div>
+                  ) : error ? (
+                    <div className="p-4 text-sm text-red-500 bg-red-900/50 rounded-lg m-4" role="alert">
+                      Error loading data: {error}
+                    </div>
+                  ) : (
+                    <div className="flex-1 overflow-y-auto">
+                      <table className="w-full text-sm text-left text-gray-400">
+                        <thead className="text-xs text-gray-400 uppercase bg-[#16181c]">
                           <tr>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider w-2/5">Deck Name</th>
-                            <th className="px-2 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider w-1/6">Total Cards</th>
-                            <th className="px-2 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider w-1/6">Date</th>
-                            <th className="px-2 py-3 w-1/6"></th>
+                            <th scope="col" className="px-4 py-3 w-2/5">Name</th>
+                            <th scope="col" className="px-4 py-3 w-1/5 text-right">Amount</th>
+                            <th scope="col" className="px-4 py-3 w-1/5">Date</th>
+                            <th scope="col" className="px-4 py-3 w-1/5">Account</th>
+                            <th scope="col" className="px-4 py-3 w-auto"></th> {/* For arrow */} 
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-gray-800">
-                          {paginatedDeckStats.length === 0 && (
-                            <tr>
-                              <td colSpan={4} className="text-gray-400 text-center py-6">No decks available for review</td>
+                        <tbody>
+                          {paginatedTransactions.length === 0 && (
+                            <tr className="bg-[#1f2328]">
+                              <td colSpan={5} className="text-center py-6 text-gray-500">No transactions available</td>
                             </tr>
                           )}
-                          {paginatedDeckStats.map(deck => (
-                            <tr key={deck.id} className={selectedDeck === deck.id ? 'bg-gray-800/60' : ''}>
-                              <td className="px-4 py-3 font-semibold text-gray-200 truncate max-w-xs">{deck.title}</td>
-                                  <td className="px-2 py-3 text-gray-100">{deck.totalCards}</td>
-                              <td className="px-2 py-3 text-gray-100">{deck.createdAt ? new Date(deck.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : '-'}</td>
-                              <td className="px-2 py-3">
-                                <button
-                                  className="px-4 py-2 rounded bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold shadow"
-                                  onClick={() => { setSelectedDeck(deck.id); handleDeckClick(deck.id, deck.title); }}
-                                >Review</button>
+                          {paginatedTransactions.map((tx) => (
+                            <tr key={tx.id} className="bg-[#1f2328] border-b border-gray-700 hover:bg-gray-700/30 group cursor-pointer">
+                              <td className="px-4 py-3 flex items-center space-x-3">
+                                <img src={tx.avatar} alt={tx.name} className="w-8 h-8 rounded-full" />
+                                <span className="font-medium text-white whitespace-nowrap">{tx.name}</span>
+                              </td>
+                              <td className={`px-4 py-3 font-medium whitespace-nowrap text-right ${tx.amount >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                                {tx.amount >= 0 ? '+' : ''}{formatCurrency(tx.amount)}
+                              </td>
+                              <td className="px-4 py-3 whitespace-nowrap">{tx.date}</td>
+                              <td className="px-4 py-3">
+                                <div className="flex items-center space-x-2">
+                                  {getPaymentIcon(tx.account)}
+                                  <div>
+                                    <span className="text-white font-medium block text-xs">{tx.account || 'N/A'}</span>
+                                    <span className="text-gray-500 block text-xs">Expire {tx.expire || 'N/A'}</span>
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="px-4 py-3">
+                                <FiArrowRight size={16} className="text-gray-600 group-hover:text-white transition-colors" />
                               </td>
                             </tr>
                           ))}
                         </tbody>
                       </table>
                     </div>
-                    {/* Pagination Controls */}
-                    {totalPages > 1 && (
-                      <div className="relative flex flex-row items-center justify-center gap-2 mt-4 mb-2 sticky bottom-0 z-10 bg-gradient-to-br from-gray-900 via-gray-950 to-gray-900 border-t border-gray-800 pt-3 min-h-[56px]">
-                        <button
-                          className={`absolute left-0 flex items-center text-xs font-semibold text-gray-400 hover:text-gray-200 transition-colors px-4 py-2 disabled:opacity-50 disabled:cursor-not-allowed`}
-                          onClick={() => setCurrentPage(currentPage - 1)}
-                          disabled={currentPage === 1}
-                          aria-label="Previous Page"
-                        >
-                          <svg className="mr-1" width="18" height="18" fill="none" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                          <span>Previous</span>
-                        </button>
-                        <span className="mx-6 text-gray-400 text-base font-semibold select-none text-center" style={{minWidth:'120px'}}>
-                          Page {currentPage} of {totalPages}
-                        </span>
-                        <button
-                          className={`absolute right-0 flex items-center text-xs font-semibold text-gray-400 hover:text-gray-200 transition-colors px-4 py-2 disabled:opacity-50 disabled:cursor-not-allowed`}
-                          onClick={() => setCurrentPage(currentPage + 1)}
-                          disabled={currentPage === totalPages}
-                          aria-label="Next Page"
-                        >
-                          <span>Next</span>
-                          <svg className="ml-1" width="18" height="18" fill="none" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            </Card>
-          </section>
-        </main>
+                  )}
+                  {/* Pagination Controls - Updated Style */} 
+                  {totalPages > 1 && (
+                    <div className="flex items-center justify-between p-4 border-t border-gray-700 bg-[#16181c]">
+                      <button
+                        className={`flex items-center text-sm font-medium text-gray-400 hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed`}
+                        onClick={() => setCurrentPage(currentPage - 1)}
+                        disabled={currentPage === 1}
+                        aria-label="Previous Page"
+                      >
+                        <FiArrowLeft className="mr-2" size={16}/>
+                        <span>Prev</span>
+                      </button>
+                      <span className="text-sm text-gray-400">
+                        Page {currentPage} to {totalPages} {/* Corrected text based on image */}
+                      </span>
+                      <button
+                        className={`flex items-center text-sm font-medium text-gray-400 hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed`}
+                        onClick={() => setCurrentPage(currentPage + 1)}
+                        disabled={currentPage === totalPages}
+                        aria-label="Next Page"
+                      >
+                        <span>Next</span>
+                        <FiArrowRight className="ml-2" size={16}/>
+                      </button>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
