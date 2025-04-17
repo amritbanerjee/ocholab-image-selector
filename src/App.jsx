@@ -4,10 +4,12 @@ import { supabase } from './lib/supabaseClient'
 import Login from './components/Login'
 import ProtectedRoute from './components/ProtectedRoute'
 import ImageSelection from './components/ImageSelection'
-import DeckList from './components/pages/DeckList'
+// import DeckList from './components/pages/DeckList' // Old import
+import DeckListPage from './pages/DeckListPage'; // New import
 import Navbar from './components/layout/Navbar'
-import Home from './components/pages/Home'
-import DashboardPage from './components/pages/DashboardPage';
+// import Home from './components/pages/Home' // Old import
+// import DashboardPage from './components/pages/DashboardPage'; // Old import
+import HomePage from './pages/HomePage'; // New import
 
 function App() {
   const [session, setSession] = useState(null)
@@ -42,38 +44,27 @@ function App() {
   return (
     <Router basename="/ocholab-image-selector">
       <div className="min-h-screen bg-gray-100">
-        {window.location.pathname !== "/ocholab-image-selector/dashboard" && <Navbar />}
+        {/* Conditional Navbar rendering might need adjustment based on HomePage layout */}
+        {/* Consider removing Navbar if HomePage includes its own header/sidebar */}
+        {/* {window.location.pathname !== "/ocholab-image-selector/dashboard" && <Navbar />} */}
         <Routes>
-          <Route path="/" element={<Login supabase={supabase} />} />
+          <Route path="/login" element={<Login supabase={supabase} />} /> {/* Changed path from / to /login */} 
           <Route
-            path="/home"
+            path="/"
             element={
               <ProtectedRoute session={session} supabase={supabase}>
-                <Home supabase={supabase} session={session} />
+                <HomePage supabase={supabase} session={session} /> {/* Default route */} 
               </ProtectedRoute>
             }
           />
+          {/* Removed /home route */}
+          {/* Removed /dashboard route */}
+          {/* Removed generic /image-selection route */}
           <Route
-            path="/dashboard"
+            path="/decks" // Changed path from /cards-for-review
             element={
               <ProtectedRoute session={session} supabase={supabase}>
-                <DashboardPage supabase={supabase} session={session} />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/image-selection"
-            element={
-              <ProtectedRoute session={session} supabase={supabase}>
-                <ImageSelection supabase={supabase} session={session} />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/cards-for-review"
-            element={
-              <ProtectedRoute session={session} supabase={supabase}>
-                <DeckList supabase={supabase} session={session} />
+                <DeckListPage supabase={supabase} session={session} /> {/* Use renamed component */}
               </ProtectedRoute>
             }
           />
@@ -81,7 +72,7 @@ function App() {
             path="/deck/:deckId/images"
             element={
               <ProtectedRoute session={session} supabase={supabase}>
-                <ImageSelection supabase={supabase} session={session} />
+                <ImageSelection supabase={supabase} session={session} /> {/* Keep for now, consider DeckImageViewerPage later */}
               </ProtectedRoute>
             }
           />

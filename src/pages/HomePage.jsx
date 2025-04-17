@@ -1,95 +1,29 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'; // Adjusted path
 // Assuming you have an icon library like react-icons
 import { FiHome, FiClock, FiCalendar, FiSettings, FiGrid, FiBarChart2, FiUsers, FiBell, FiPlus, FiMoreHorizontal, FiArrowLeft, FiArrowRight, FiTrendingDown, FiTrendingUp, FiCheckCircle, FiXCircle, FiLogOut } from 'react-icons/fi'; // Added FiLogOut
 import { FaPaypal, FaCcVisa, FaGoogle, FaApple, FaCcMastercard } from 'react-icons/fa';
 import { format } from 'date-fns'; // Import date-fns for formatting
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts'; // Import BarChart components
+import Sidebar from '../features/dashboard/Sidebar'; // Added import
+import Header from '../features/dashboard/Header'; // Added import
+import NavigationTabs from '../features/dashboard/NavigationTabs'; // Added import
+import StatCard from '../features/dashboard/StatCard'; // Added import
+import SimplePieChart from '../features/dashboard/SimplePieChart'; // Added import
 
-// Updated Sidebar with icons and styling closer to the image
-const Sidebar = () => (
-  <aside className="flex flex-col items-center bg-[#1a1d21] text-gray-400 w-20 py-6 space-y-6 min-h-screen shadow-lg">
-    <div className="mb-8">
-      {/* Placeholder Logo */}
-      <svg width="32" height="32" fill="none" viewBox="0 0 24 24"><rect width="24" height="24" rx="6" fill="#3b82f6"/><path d="M7 8h10M7 12h10M7 16h6" stroke="#fff" strokeWidth="2" strokeLinecap="round"/></svg>
-    </div>
-    <nav className="flex flex-col items-center space-y-6 flex-1">
-      <button className="p-2 rounded-lg text-gray-400 hover:bg-gray-700 hover:text-white transition-colors"><FiGrid size={24} /></button>
-      <button className="p-2 rounded-lg text-gray-400 hover:bg-gray-700 hover:text-white transition-colors"><FiBarChart2 size={24} /></button>
-      <button className="p-2 rounded-lg text-gray-400 hover:bg-gray-700 hover:text-white transition-colors"><FiCalendar size={24} /></button>
-      <button className="p-2 rounded-lg text-gray-400 hover:bg-gray-700 hover:text-white transition-colors"><FiClock size={24} /></button>
-      {/* Add more icons as needed based on image */}
-    </nav>
-    <div className="mt-auto flex flex-col items-center space-y-6">
-       <button className="p-2 rounded-lg text-gray-400 hover:bg-gray-700 hover:text-white transition-colors"><FiSettings size={24} /></button>
-      <img src="https://randomuser.me/api/portraits/men/32.jpg" alt="User" className="w-10 h-10 rounded-full border-2 border-gray-600 shadow-md" />
-    </div>
-  </aside>
-);
 
-// Updated Navbar - Separated Header and Navigation
-const Header = ({ userName, handleLogout }) => (
-  <header className="flex items-center justify-between bg-[#1f2328] text-white px-8 py-4 shadow-md border-b border-gray-700">
-    <div>
-      <h1 className="text-xl font-semibold text-white">Hey there, {userName || 'User'}!</h1>
-      <p className="text-sm text-gray-400">Welcome back, we're happy to have you here!</p>
-    </div>
-    <div className="flex items-center space-x-4"> {/* Adjusted spacing */} 
-      {/* Removed Edit section button */}
-      <button 
-        onClick={handleLogout} 
-        className="flex items-center bg-red-600 hover:bg-red-500 text-white text-sm font-medium py-2 px-4 rounded-lg transition-colors"
-      >
-        <FiLogOut className="mr-2" size={16} /> {/* Added icon */}
-        Log out
-      </button>
-      <button className="text-gray-400 hover:text-white p-2 rounded-lg hover:bg-gray-700 transition-colors"><FiMoreHorizontal size={20} /></button>
-    </div>
-  </header>
-);
 
-const NavigationTabs = () => (
-  <nav className="flex space-x-6 px-8 py-3 bg-[#1f2328] border-b border-gray-700 shadow-sm">
-    <a href="#" className="text-gray-400 hover:text-white transition-colors">My Tasks</a>
-    <a href="#" className="text-white font-semibold border-b-2 border-blue-500 pb-1">Profile</a>
-    <a href="#" className="text-gray-400 hover:text-white transition-colors">Stats</a>
-    <a href="#" className="text-gray-400 hover:text-white transition-colors">Inbox</a>
-    <a href="#" className="text-gray-400 hover:text-white transition-colors">Team</a>
-    <a href="#" className="relative text-gray-400 hover:text-white transition-colors">
-      Notifications
-      <span className="absolute -top-1 -right-3 bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5">9</span>
-    </a>
-    <a href="#" className="text-gray-400 hover:text-white transition-colors">Settings</a>
-  </nav>
-);
+
+
+
 
 // Helper to format currency
 const formatCurrency = (amount) => {
   return `$${Math.abs(amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 };
 
-// Updated Stat Card component
-const StatCard = ({ title, value, change, changeType, icon }) => (
-  <Card className="bg-[#1f2328] border border-gray-700 text-white shadow-md rounded-lg overflow-hidden">
-    <CardContent className="p-4 flex items-center justify-between">
-      <div className="flex items-center space-x-3">
-         <div className="p-2 bg-blue-600/20 text-blue-500 rounded-lg">
-           {icon}
-         </div>
-         <div>
-           <p className="text-3xl font-bold">{value}</p>
-           <p className="text-sm text-gray-400">{title}</p>
-         </div>
-      </div>
-      {change && (
-        <span className={`flex items-center text-xs font-medium px-2 py-1 rounded-full ${changeType === 'loss' ? 'bg-red-500/20 text-red-400' : 'bg-green-500/20 text-green-400'}`}>
-          {changeType === 'loss' ? <FiTrendingDown className="mr-1" /> : <FiTrendingUp className="mr-1" />}
-          {change}
-        </span>
-      )}
-    </CardContent>
-  </Card>
-);
+
 
 // Mock data for Lookscout and Achievements
 const lookscoutMembers = [
@@ -101,50 +35,51 @@ const lookscoutMembers = [
   { id: 6, img: 'https://randomuser.me/api/portraits/men/5.jpg' },
 ];
 
-const achievements = [
-  { id: 1, icon: <FiGrid size={20} className="text-red-500"/>, title: 'Global Stars', description: 'A brief feature description' },
-  { id: 2, icon: <FiCheckCircle size={20} className="text-green-500"/>, title: 'Focus Keeper', description: 'A brief feature description' },
-  { id: 3, icon: <FiXCircle size={20} className="text-blue-500"/>, title: 'High Tower', description: 'A brief feature description' },
-];
+// Removed static achievements data, will use chart instead
+// const achievements = [
+//   { id: 1, icon: <FiGrid size={20} className="text-red-500"/>, title: 'Global Stars', description: 'A brief feature description' },
+//   { id: 2, icon: <FiCheckCircle size={20} className="text-green-500"/>, title: 'Focus Keeper', description: 'A brief feature description' },
+//   { id: 3, icon: <FiXCircle size={20} className="text-blue-500"/>, title: 'High Tower', description: 'A brief feature description' },
+// ];
 
-// Circular progress gauge component (simplified)
-const ProgressGauge = ({ percentage, label = "My Stats" }) => {
-  const radius = 50;
-  const stroke = 10;
-  const normalizedRadius = radius - stroke / 2;
-  const circumference = normalizedRadius * 2 * Math.PI;
-  const strokeDashoffset = circumference - (percentage / 100) * circumference;
-
-  return (
-    <div className="relative flex items-center justify-center w-32 h-32 mx-auto my-4">
-      <svg height={radius * 2} width={radius * 2} className="transform -rotate-90">
-        <circle
-          stroke="#374151" // gray-700
-          fill="transparent"
-          strokeWidth={stroke}
-          r={normalizedRadius}
-          cx={radius}
-          cy={radius}
-        />
-        <circle
-          stroke="#3b82f6" // blue-500
-          fill="transparent"
-          strokeWidth={stroke}
-          strokeDasharray={circumference + ' ' + circumference}
-          style={{ strokeDashoffset, transition: 'stroke-dashoffset 0.5s ease-in-out' }}
-          strokeLinecap="round"
-          r={normalizedRadius}
-          cx={radius}
-          cy={radius}
-        />
-      </svg>
-      <div className="absolute flex flex-col items-center justify-center">
-        <span className="text-3xl font-bold text-white">{percentage}%</span>
-        <span className="text-xs text-gray-400">{label}</span>
-      </div>
-    </div>
-  );
-};
+// Remove the old ProgressGauge component
+// const ProgressGauge = ({ percentage, label = "My Stats" }) => {
+//   const radius = 50;
+//   const stroke = 10;
+//   const normalizedRadius = radius - stroke / 2;
+//   const circumference = normalizedRadius * 2 * Math.PI;
+//   const strokeDashoffset = circumference - (percentage / 100) * circumference;
+//
+//   return (
+//     <div className="relative flex items-center justify-center w-32 h-32 mx-auto my-4">
+//       <svg height={radius * 2} width={radius * 2} className="transform -rotate-90">
+//         <circle
+//           stroke="#374151" // gray-700
+//           fill="transparent"
+//           strokeWidth={stroke}
+//           r={normalizedRadius}
+//           cx={radius}
+//           cy={radius}
+//         />
+//         <circle
+//           stroke="#3b82f6" // blue-500
+//           fill="transparent"
+//           strokeWidth={stroke}
+//           strokeDasharray={circumference + ' ' + circumference}
+//           style={{ strokeDashoffset, transition: 'stroke-dashoffset 0.5s ease-in-out' }}
+//           strokeLinecap="round"
+//           r={normalizedRadius}
+//           cx={radius}
+//           cy={radius}
+//         />
+//       </svg>
+//       <div className="absolute flex flex-col items-center justify-center">
+//         <span className="text-3xl font-bold text-white">{percentage}%</span>
+//         <span className="text-xs text-gray-400">{label}</span>
+//       </div>
+//     </div>
+//   );
+// };
 
 // Payment Icon Helper
 const getPaymentIcon = (account) => {
@@ -164,7 +99,7 @@ const DashboardPage = ({ supabase, session }) => {
     totalDecks: 0,
     totalCards: 0,
     cardsForReview: 0,
-    reviewProgress: 0,
+    reviewProgress: 0, // Percentage of cards reviewed
   });
   // const [transactions, setTransactions] = useState([]); // Will be populated by Supabase - Replaced
   const [reviewDecks, setReviewDecks] = useState([]); // State for decks needing review
@@ -313,6 +248,16 @@ const DashboardPage = ({ supabase, session }) => {
     navigate(`/deck/${deckId}/images`, { state: { deckName: deckTitle } });
   };
 
+  // Prepare data for the Pie chart
+  const reviewChartData = useMemo(() => {
+    const reviewed = stats.reviewProgress;
+    const notReviewed = 100 - reviewed;
+    return [
+      { name: 'Reviewed', value: reviewed, fill: '#10b981' }, // emerald-500 (more vibrant green)
+      { name: 'Needs Review', value: notReviewed, fill: '#0ea5e9' }, // sky-500 (brighter blue)
+     ];
+   }, [stats.reviewProgress]);
+
   return (
     <div className="flex h-screen bg-[#16181c] overflow-hidden">
       <Sidebar />
@@ -335,7 +280,7 @@ const DashboardPage = ({ supabase, session }) => {
               {/* Lookscout Card */}
               <Card className="bg-[#1f2328] border border-gray-700 text-white shadow-md rounded-lg p-4">
                 <CardHeader className="p-0 mb-3">
-                  <CardTitle className="text-lg font-semibold">Lookscout</CardTitle>
+                  <CardTitle className="text-lg font-semibold">Topic researcher</CardTitle>
                   <p className="text-sm text-gray-400">We make you create, not to be worried about technical stuff.</p>
                 </CardHeader>
                 <CardContent className="p-0">
@@ -344,33 +289,38 @@ const DashboardPage = ({ supabase, session }) => {
                       <img key={member.id} src={member.img} alt="Member" className="w-8 h-8 rounded-full border-2 border-[#1f2328]" />
                     ))}
                   </div>
-                  <button className="w-full bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium py-2 px-4 rounded-lg transition-colors">View all</button>
+                  <button className="w-full bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium py-2 px-4 rounded-lg transition-colors">Create Deck</button>
                 </CardContent>
               </Card>
 
-              {/* Achievements Card */}
+              {/* Achievements Card - Replaced with Multiple Charts */}
               <Card className="bg-[#1f2328] border border-gray-700 text-white shadow-md rounded-lg p-4">
                 <CardHeader className="flex flex-row items-center justify-between p-0 mb-3">
-                  <CardTitle className="text-lg font-semibold">Achievements</CardTitle>
+                  <CardTitle className="text-lg font-semibold">Overview Stats</CardTitle>
                   <button className="text-gray-400 hover:text-white"><FiMoreHorizontal size={20} /></button>
                 </CardHeader>
-                <CardContent className="p-0">
-                  <p className="text-sm text-gray-400 mb-2">Review Progress</p> {/* Updated label */}
-                  <ProgressGauge percentage={stats.reviewProgress} label="Reviewed" /> {/* Use dynamic percentage */}
-                  <ul className="space-y-3 mt-4">
-                    {achievements.map(ach => (
-                      <li key={ach.id} className="flex items-center justify-between group cursor-pointer">
-                        <div className="flex items-center space-x-3">
-                          <div className="p-1.5 bg-gray-700/50 rounded-md">{ach.icon}</div>
-                          <div>
-                            <p className="text-sm font-medium text-white">{ach.title}</p>
-                            <p className="text-xs text-gray-400">{ach.description}</p>
-                          </div>
-                        </div>
-                        <FiArrowRight size={16} className="text-gray-600 group-hover:text-white transition-colors" />
-                      </li>
-                    ))}
-                  </ul>
+                <CardContent className="p-0 flex justify-around items-start space-x-2"> {/* Use flex to arrange charts */} 
+                  {/* Review Progress Chart */}
+                  <SimplePieChart
+                    data={reviewChartData}
+                    title="Review Progress"
+                    centerText={`${stats.reviewProgress}%`}
+                    centerLabel="Reviewed"
+                  />
+                  {/* Live Decks Chart (Mock) */}
+                  <SimplePieChart
+                    data={mockLiveDecksData}
+                    title="Live Decks"
+                    centerText={`${mockLiveDecksData.find(d => d.name === 'Active')?.value || 0}`}
+                    centerLabel="Active"
+                  />
+                  {/* Processing Status Chart (Mock) */}
+                  <SimplePieChart
+                    data={mockProcessingData}
+                    title="Card Processing"
+                    centerText={`${mockProcessingData.find(d => d.name === 'Processed')?.value || 0}`}
+                    centerLabel="Processed"
+                  />
                 </CardContent>
               </Card>
             </div>
@@ -478,3 +428,16 @@ const DashboardPage = ({ supabase, session }) => {
 };
 
 export default DashboardPage;
+
+// Mock data for the new charts
+const mockLiveDecksData = [
+  { name: 'Active', value: 45, fill: '#22c55e' }, // green-500
+  { name: 'Inactive', value: 15, fill: '#f97316' }, // orange-500
+];
+
+const mockProcessingData = [
+  { name: 'Processed', value: 120, fill: '#8b5cf6' }, // violet-500
+  { name: 'Pending', value: 35, fill: '#ec4899' }, // pink-500
+];
+
+// Helper component for a simple Pie Chart
