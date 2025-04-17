@@ -2,8 +2,9 @@ import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 // Assuming you have an icon library like react-icons
-import { FiHome, FiClock, FiCalendar, FiSettings, FiGrid, FiBarChart2, FiUsers, FiBell, FiPlus, FiMoreHorizontal, FiArrowLeft, FiArrowRight, FiTrendingDown, FiTrendingUp, FiCheckCircle, FiXCircle } from 'react-icons/fi';
+import { FiHome, FiClock, FiCalendar, FiSettings, FiGrid, FiBarChart2, FiUsers, FiBell, FiPlus, FiMoreHorizontal, FiArrowLeft, FiArrowRight, FiTrendingDown, FiTrendingUp, FiCheckCircle, FiXCircle, FiLogOut } from 'react-icons/fi'; // Added FiLogOut
 import { FaPaypal, FaCcVisa, FaGoogle, FaApple, FaCcMastercard } from 'react-icons/fa';
+import { format } from 'date-fns'; // Import date-fns for formatting
 
 // Updated Sidebar with icons and styling closer to the image
 const Sidebar = () => (
@@ -27,15 +28,21 @@ const Sidebar = () => (
 );
 
 // Updated Navbar - Separated Header and Navigation
-const Header = ({ userName }) => (
+const Header = ({ userName, handleLogout }) => (
   <header className="flex items-center justify-between bg-[#1f2328] text-white px-8 py-4 shadow-md border-b border-gray-700">
     <div>
       <h1 className="text-xl font-semibold text-white">Hey there, {userName || 'User'}!</h1>
       <p className="text-sm text-gray-400">Welcome back, we're happy to have you here!</p>
     </div>
-    <div className="flex items-center space-x-2">
-      <button className="bg-gray-700 hover:bg-gray-600 text-white text-sm font-medium py-2 px-4 rounded-lg transition-colors">Edit section</button>
-      <button className="bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium py-2 px-4 rounded-lg transition-colors">Add item</button>
+    <div className="flex items-center space-x-4"> {/* Adjusted spacing */} 
+      {/* Removed Edit section button */}
+      <button 
+        onClick={handleLogout} 
+        className="flex items-center bg-red-600 hover:bg-red-500 text-white text-sm font-medium py-2 px-4 rounded-lg transition-colors"
+      >
+        <FiLogOut className="mr-2" size={16} /> {/* Added icon */}
+        Log out
+      </button>
       <button className="text-gray-400 hover:text-white p-2 rounded-lg hover:bg-gray-700 transition-colors"><FiMoreHorizontal size={20} /></button>
     </div>
   </header>
@@ -154,12 +161,13 @@ const getPaymentIcon = (account) => {
 
 const DashboardPage = ({ supabase, session }) => {
   const [stats, setStats] = useState({
-    totalDecks: 0, // Renamed from totalExpenses1
-    totalCards: 0, // Renamed from totalExpenses2
-    cardsForReview: 0, // Renamed from totalExpenses3
-    reviewProgress: 0, // Added for progress gauge
+    totalDecks: 0,
+    totalCards: 0,
+    cardsForReview: 0,
+    reviewProgress: 0,
   });
-  const [transactions, setTransactions] = useState([]); // Will be populated by Supabase
+  // const [transactions, setTransactions] = useState([]); // Will be populated by Supabase - Replaced
+  const [reviewDecks, setReviewDecks] = useState([]); // State for decks needing review
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
@@ -167,13 +175,23 @@ const DashboardPage = ({ supabase, session }) => {
   const itemsPerPage = 7; // Match image
   const userName = session?.user?.user_metadata?.full_name || session?.user?.email;
 
+  // Logout handler
+  const handleLogout = async () => {
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      console.error('Error logging out:', error);
+    } else {
+      navigate('/'); // Redirect to login page after logout
+    }
+  };
+
   // Fetch data from Supabase
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       setError(null);
       try {
-        // Fetch stats (similar to Home.jsx)
+        // --- Fetch Stats (Keep existing logic) ---
         const { count: decksCount, error: decksError } = await supabase
           .from('decks')
           .select('id', { count: 'exact', head: true });
@@ -190,25 +208,8 @@ const DashboardPage = ({ supabase, session }) => {
           .eq('status', 'choosebaseimage');
         if (reviewError) throw reviewError;
 
-        // Fetch mock transactions (replace with actual Supabase query if needed)
-        // For now, using the previous mock data structure but fetched async
-        const mockTransactions = [
-          { id: 1, name: 'Grand Rapids', amount: 6320.53, date: 'Wed 1:00 pm', account: 'Visa 1234', expire: '24/2032', avatar: 'https://randomuser.me/api/portraits/men/75.jpg' },
-          { id: 2, name: 'Bell Gardens', amount: 6471.39, date: 'Wed 1:00 pm', account: 'Google Pay 1234', expire: '24/2032', avatar: 'https://randomuser.me/api/portraits/women/44.jpg' },
-          { id: 3, name: 'Broomfield', amount: -2223.9, date: 'Wed 7:20 pm', account: 'PayPal 1234', expire: '24/2032', avatar: 'https://randomuser.me/api/portraits/men/32.jpg' },
-          { id: 4, name: 'Yakima', amount: 7344.50, date: 'Wed 1:00 pm', account: 'Maestro 1234', expire: '24/2032', avatar: 'https://randomuser.me/api/portraits/men/5.jpg' },
-          { id: 5, name: 'Springfield', amount: -6157.14, date: 'Wed 7:20 pm', account: 'Apple Pay 1234', expire: '24/2032', avatar: 'https://randomuser.me/api/portraits/women/65.jpg' },
-          { id: 6, name: 'Alexandria', amount: -6780.52, date: 'Wed 1:00 pm', account: 'Mastercard 1234', expire: '24/2032', avatar: 'https://randomuser.me/api/portraits/women/12.jpg' },
-          { id: 7, name: 'Kalamazoo', amount: -2263.72, date: 'Wed 7:20 pm', account: 'Visa 1234', expire: '24/2032', avatar: 'https://randomuser.me/api/portraits/women/33.jpg' },
-          { id: 8, name: 'Transaction 8', amount: 100.00, date: 'Thu 9:00 am', account: 'Visa 5678', expire: '12/2025', avatar: 'https://randomuser.me/api/portraits/men/11.jpg' },
-          { id: 9, name: 'Transaction 9', amount: -50.25, date: 'Thu 10:30 am', account: 'PayPal 5678', expire: '12/2025', avatar: 'https://randomuser.me/api/portraits/women/22.jpg' },
-          { id: 10, name: 'Transaction 10', amount: 250.75, date: 'Thu 1:15 pm', account: 'Mastercard 5678', expire: '12/2025', avatar: 'https://randomuser.me/api/portraits/men/33.jpg' },
-        ];
-        setTransactions(mockTransactions);
-
-        // Calculate review progress (example: percentage of cards reviewed)
-        // This needs a proper calculation based on your data model
-        const totalReviewed = cardsCount - reviewCount; // Example calculation
+        // Calculate review progress
+        const totalReviewed = cardsCount - reviewCount;
         const reviewProgress = cardsCount > 0 ? Math.round((totalReviewed / cardsCount) * 100) : 0;
 
         setStats({
@@ -217,6 +218,78 @@ const DashboardPage = ({ supabase, session }) => {
           cardsForReview: reviewCount || 0,
           reviewProgress: reviewProgress,
         });
+
+        // --- Fetch Decks for Review (New Logic) ---
+        // 1. Get cards needing review with deck info
+        const { data: cardsForReviewData, error: cardsForReviewError } = await supabase
+          .from('cards')
+          .select(`
+            deck_id,
+            decks!deck_id(
+              id,
+              title_key,
+              description_key,
+              created_at
+            )
+          `)
+          .eq('status', 'choosebaseimage');
+
+        if (cardsForReviewError) throw cardsForReviewError;
+
+        if (!cardsForReviewData || cardsForReviewData.length === 0) {
+          setReviewDecks([]); // No decks need review
+          setLoading(false);
+          return;
+        }
+
+        // 2. Extract unique title_keys and deck details
+        const deckMap = new Map();
+        cardsForReviewData.forEach(card => {
+          const deckId = card.deck_id;
+          if (!deckMap.has(deckId)) {
+            deckMap.set(deckId, {
+              id: deckId,
+              title_key: card.decks.title_key,
+              description_key: card.decks.description_key, // Store description key
+              created_at: card.decks.created_at,
+              review_count: 0,
+              // Add a mock avatar for now
+              avatar: `https://randomuser.me/api/portraits/${Math.random() > 0.5 ? 'men' : 'women'}/${Math.floor(Math.random() * 99)}.jpg`
+            });
+          }
+          deckMap.get(deckId).review_count += 1;
+        });
+
+        const allKeys = Array.from(deckMap.values()).flatMap(deck => [deck.title_key, deck.description_key]).filter(Boolean);
+        const sanitizedKeys = [...new Set(allKeys)].map(key => encodeURIComponent(key)); // Get unique keys
+
+        // 3. Fetch translations for both title and description
+        let translationMap = {};
+        if (sanitizedKeys.length > 0) {
+          const { data: translations, error: translationsError } = await supabase
+            .from('translations_en')
+            .select('key, value')
+            .in('key', sanitizedKeys);
+
+          if (translationsError) {
+            console.warn('Failed to fetch translations:', translationsError.message);
+            // Proceed without translations if fetch fails
+          } else {
+            translationMap = translations.reduce((acc, item) => {
+              acc[decodeURIComponent(item.key)] = item.value;
+              return acc;
+            }, {});
+          }
+        }
+
+        // 4. Combine data into final reviewDecks array
+        const finalReviewDecks = Array.from(deckMap.values()).map(deck => ({
+          ...deck,
+          title: translationMap[deck.title_key] || `Deck ${deck.id}`, // Fallback title
+          description: translationMap[deck.description_key] || '' // Add description, fallback to empty string
+        }));
+
+        setReviewDecks(finalReviewDecks);
 
       } catch (err) {
         console.error('Error fetching dashboard data:', err);
@@ -231,15 +304,20 @@ const DashboardPage = ({ supabase, session }) => {
     }
   }, [supabase, session]);
 
-  // Pagination logic for transactions
-  const totalPages = Math.ceil(transactions.length / itemsPerPage);
-  const paginatedTransactions = transactions.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+  // Pagination logic for review decks
+  const totalPages = Math.ceil(reviewDecks.length / itemsPerPage);
+  const paginatedDecks = reviewDecks.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
+  // Handle deck click (navigate to image selection)
+  const handleDeckClick = (deckId, deckTitle) => {
+    navigate(`/deck/${deckId}/images`, { state: { deckName: deckTitle } });
+  };
 
   return (
     <div className="flex h-screen bg-[#16181c] overflow-hidden">
       <Sidebar />
       <div className="flex-1 flex flex-col min-h-0">
-        <Header userName={userName} />
+        <Header userName={userName} handleLogout={handleLogout} />
         <NavigationTabs />
         {/* Main content area */}
         <div className="flex-1 p-6 space-y-6 overflow-y-auto">
@@ -297,8 +375,8 @@ const DashboardPage = ({ supabase, session }) => {
               </Card>
             </div>
 
-            {/* Right Column (Transactions) */}
-            <div className="lg:col-span-2">
+            {/* Right Column (Decks for Review) */}
+             <div className="lg:col-span-2">
               <Card className="bg-[#1f2328] border border-gray-700 text-white shadow-md rounded-lg h-full flex flex-col">
                 <CardHeader className="flex flex-row items-center justify-between p-4 border-b border-gray-700">
                   <div className="flex items-center space-x-2">
@@ -312,9 +390,9 @@ const DashboardPage = ({ supabase, session }) => {
                     <button className="text-gray-400 hover:text-white"><FiPlus size={20} /></button>
                   </div>
                 </CardHeader>
-                <CardHeader className="flex flex-row items-center justify-between p-4 border-b border-gray-700">
-                  <CardTitle className="text-lg font-semibold">Transactions</CardTitle>
-                  <button className="text-gray-400 hover:text-white"><FiMoreHorizontal size={20} /></button>
+                  <CardHeader className="flex flex-row items-center justify-between p-4 border-b border-gray-700">
+                   <CardTitle className="text-lg font-semibold">Decks ready for Review</CardTitle> {/* Renamed Title */}
+                   <button className="text-gray-400 hover:text-white"><FiMoreHorizontal size={20} /></button>
                 </CardHeader>
                 <CardContent className="p-0 flex-1 flex flex-col min-h-0">
                   {loading ? (
@@ -323,81 +401,73 @@ const DashboardPage = ({ supabase, session }) => {
                     </div>
                   ) : error ? (
                     <div className="p-4 text-sm text-red-500 bg-red-900/50 rounded-lg m-4" role="alert">
-                      Error loading data: {error}
+                      Error loading decks: {error}
                     </div>
                   ) : (
                     <div className="flex-1 overflow-y-auto">
                       <table className="w-full text-sm text-left text-gray-400">
                         <thead className="text-xs text-gray-400 uppercase bg-[#16181c]">
-                          <tr>
-                            <th scope="col" className="px-4 py-3 w-2/5">Name</th>
-                            <th scope="col" className="px-4 py-3 w-1/5 text-right">Amount</th>
-                            <th scope="col" className="px-4 py-3 w-1/5">Date</th>
-                            <th scope="col" className="px-4 py-3 w-1/5">Account</th>
-                            <th scope="col" className="px-4 py-3 w-auto"></th> {/* For arrow */} 
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {paginatedTransactions.length === 0 && (
-                            <tr className="bg-[#1f2328]">
-                              <td colSpan={5} className="text-center py-6 text-gray-500">No transactions available</td>
-                            </tr>
-                          )}
-                          {paginatedTransactions.map((tx) => (
-                            <tr key={tx.id} className="bg-[#1f2328] border-b border-gray-700 hover:bg-gray-700/30 group cursor-pointer">
-                              <td className="px-4 py-3 flex items-center space-x-3">
-                                <img src={tx.avatar} alt={tx.name} className="w-8 h-8 rounded-full" />
-                                <span className="font-medium text-white whitespace-nowrap">{tx.name}</span>
-                              </td>
-                              <td className={`px-4 py-3 font-medium whitespace-nowrap text-right ${tx.amount >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                                {tx.amount >= 0 ? '+' : ''}{formatCurrency(tx.amount)}
-                              </td>
-                              <td className="px-4 py-3 whitespace-nowrap">{tx.date}</td>
-                              <td className="px-4 py-3">
-                                <div className="flex items-center space-x-2">
-                                  {getPaymentIcon(tx.account)}
-                                  <div>
-                                    <span className="text-white font-medium block text-xs">{tx.account || 'N/A'}</span>
-                                    <span className="text-gray-500 block text-xs">Expire {tx.expire || 'N/A'}</span>
-                                  </div>
-                                </div>
-                              </td>
-                              <td className="px-4 py-3">
-                                <FiArrowRight size={16} className="text-gray-600 group-hover:text-white transition-colors" />
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
+                           <tr>
+                             <th scope="col" className="px-4 py-3 w-1/4">Deck Name</th> {/* Adjusted width */}
+                             <th scope="col" className="px-4 py-3 w-1/3">Description</th> {/* Added Description Header */}
+                             <th scope="col" className="px-4 py-3 w-1/6 text-center">Cards to Review</th> {/* Adjusted width */}
+                             <th scope="col" className="px-4 py-3 w-1/6">Created Date</th> {/* Adjusted width */}
+                             <th scope="col" className="px-4 py-3 w-auto text-right"></th> {/* For arrow */}
+                           </tr>
+                         </thead>
+                         <tbody>
+                           {paginatedDecks.length === 0 && (
+                             <tr className="bg-[#1f2328]">
+                               <td colSpan={5} className="text-center py-6 text-gray-500">No decks available for review</td> {/* Updated colspan to 5 */}
+                             </tr>
+                           )}
+                           {paginatedDecks.map((deck) => (
+                             <tr
+                               key={deck.id}
+                               className="border-b border-gray-700 hover:bg-[#2a2e34] cursor-pointer"
+                               onClick={() => handleDeckClick(deck.id, deck.title)}
+                             >
+                               <td className="px-4 py-3 font-medium text-white whitespace-nowrap flex items-center space-x-2">
+                                 <img src={deck.avatar} alt="Deck Avatar" className="w-6 h-6 rounded-full" />
+                                 <span>{deck.title}</span>
+                               </td>
+                               <td className="px-4 py-3 truncate max-w-xs" title={deck.description}>{deck.description || '-'}</td> {/* Truncate and add title attribute */}
+                               <td className="px-4 py-3 text-center">{deck.review_count}</td>
+                               <td className="px-4 py-3">{format(new Date(deck.created_at), 'MMM d, yyyy')}</td>
+                               <td className="px-4 py-3 text-right">
+                                 <FiArrowRight size={16} className="text-gray-600 group-hover:text-white transition-colors inline-block" />
+                               </td>
+                             </tr>
+                           ))}
+                         </tbody>
                       </table>
                     </div>
                   )}
-                  {/* Pagination Controls - Updated Style */} 
-                  {totalPages > 1 && (
-                    <div className="flex items-center justify-between p-4 border-t border-gray-700 bg-[#16181c]">
-                      <button
-                        className={`flex items-center text-sm font-medium text-gray-400 hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed`}
-                        onClick={() => setCurrentPage(currentPage - 1)}
-                        disabled={currentPage === 1}
-                        aria-label="Previous Page"
-                      >
-                        <FiArrowLeft className="mr-2" size={16}/>
-                        <span>Prev</span>
-                      </button>
-                      <span className="text-sm text-gray-400">
-                        Page {currentPage} to {totalPages} {/* Corrected text based on image */}
-                      </span>
-                      <button
-                        className={`flex items-center text-sm font-medium text-gray-400 hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed`}
-                        onClick={() => setCurrentPage(currentPage + 1)}
-                        disabled={currentPage === totalPages}
-                        aria-label="Next Page"
-                      >
-                        <span>Next</span>
-                        <FiArrowRight className="ml-2" size={16}/>
-                      </button>
-                    </div>
-                  )}
                 </CardContent>
+                {/* Pagination Controls */}
+                {totalPages > 1 && (
+                  <div className="flex justify-between items-center p-4 border-t border-gray-700">
+                    <button
+                      onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                      disabled={currentPage === 1}
+                      className="flex items-center px-3 py-1 text-sm font-medium text-gray-400 bg-gray-700 rounded-md hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <FiArrowLeft className="mr-1" size={14} />
+                      Previous
+                    </button>
+                    <span className="text-sm text-gray-400">
+                      Page {currentPage} of {totalPages}
+                    </span>
+                    <button
+                      onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                      disabled={currentPage === totalPages}
+                      className="flex items-center px-3 py-1 text-sm font-medium text-gray-400 bg-gray-700 rounded-md hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Next
+                      <FiArrowRight className="ml-1" size={14} />
+                    </button>
+                  </div>
+                )}
               </Card>
             </div>
           </div>
