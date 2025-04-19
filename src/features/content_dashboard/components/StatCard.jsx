@@ -1,5 +1,5 @@
 import React from 'react';
-import { Card, CardContent } from '../../components/ui/card'; // Adjusted import path
+import { Card, CardContent } from '../../../components/ui/card'; // Adjusted import path
 import { FiTrendingDown, FiTrendingUp } from 'react-icons/fi';
 
 const StatCard = ({ title, value, change, changeType, icon }) => (

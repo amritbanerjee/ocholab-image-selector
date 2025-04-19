@@ -7,49 +7,52 @@ This document outlines the revised architecture where the existing Dashboard pag
 - Make the feature-rich dashboard (`src/components/pages/DashboardPage.jsx`) the default view after login, replacing the simpler `src/components/pages/Home.jsx`.
 - Reorganize components for better clarity and maintainability.
 
+## Navigation Concept
+
+The application utilizes a two-tiered navigation system:
+
+1.  **Top Navigation Bar:** Contains tabs representing the main functional sections of the application (e.g., 'Content Dashboard', 'Sales Dashboard'). Selecting a tab switches the entire context to that section.
+2.  **Sidebar (within Sections):** Once a main section is selected via the top navigation, a sidebar (if applicable for that section) provides navigation between the different pages or views *within* that section.
+
 ## Proposed Folder Structure
-
-We will restructure the `src` directory to better reflect the application's flow and component hierarchy.
-
-```
+```plaintext
 src/
-├── App.jsx             # Main application component with routing
-├── main.jsx            # Application entry point
-├── index.css           # Global styles
-├── lib/                # Utility functions and Supabase client
+├── App.jsx           # Main application component, routing setup
+├── main.jsx          # Entry point of the application
+├── index.css         # Global styles
+├── lib/              # Utility functions, Supabase client
 │   ├── supabaseClient.js
 │   └── utils.js
-├── components/         # Reusable UI components (non-page specific)
-│   ├── ProtectedRoute.jsx
-│   ├── Login.jsx
-│   ├── ImageSelection.jsx # (Consider moving to pages/deck/ if specific)
-│   └── ui/               # Shadcn UI components
-│       └── card.jsx
-│       └── ...
-├── pages/              # Page-level components (routed views)
-│   ├── HomePage.jsx      # Renamed from DashboardPage.jsx
-│   ├── DeckListPage.jsx  # Renamed from DeckList.jsx
-│   ├── DeckImageViewerPage.jsx # New or refactored from ImageSelection for specific deck
-│   └── LoginPage.jsx     # Potentially refactor Login.jsx into here
-├── features/           # (Optional) Feature-specific components/logic
-│   └── dashboard/        # Components specific to the dashboard/home page
-│       ├── Sidebar.jsx
-│       ├── Header.jsx
-│       ├── NavigationTabs.jsx
-│       ├── StatCard.jsx
-│       └── SimplePieChart.jsx
-│   └── deck_review/
-│       └── ...
+├── components/       # Shared UI components
+│   ├── ui/             # Components from shadcn/ui (or similar)
+│   └── layout/         # Layout components (e.g., MainLayout.jsx)
+├── features/           # Feature-specific modules
+│   ├── auth/             # Authentication related features
+│   │   └── pages/
+│   │       └── LoginPage.jsx     # Handles user authentication.
+│   ├── content_dashboard/ # Content Dashboard features (formerly dashboard)
+│   │   ├── components/     # Reusable components specific to the content dashboard
+│   │   │   ├── StatCard.jsx
+│   │   │   └── SimplePieChart.jsx
+│   │   └── pages/
+│   │       └── HomePage.jsx      # Main content dashboard view.
+│   ├── deck_review/      # Features related to reviewing decks
+│   │   └── pages/
+│   │       └── DeckListPage.jsx  # Page for listing available decks for review.
+│   ├── image_selection/  # Features related to image selection for cards
+│   │   └── pages/
+│   │       └── ImageSelectorPage.jsx # Page for selecting images for a specific deck.
+│   └── ...               # Other features (e.g., card_creation, settings)
 └── assets/             # Static assets (images, fonts, etc.)
 ```
 
 **Key Changes:**
 
-1.  **Rename `DashboardPage.jsx`:** Rename `src/components/pages/DashboardPage.jsx` to `src/pages/HomePage.jsx`.
-2.  **Relocate Dashboard Components:** Move dashboard-specific sub-components (like `Sidebar`, `Header`, `StatCard`, `SimplePieChart`) into a dedicated feature folder, e.g., `src/features/dashboard/`.
-3.  **Update Imports:** Adjust import paths in `HomePage.jsx` and potentially other files to reflect the new locations.
-4.  **Rename `DeckList.jsx`:** Rename `src/components/pages/DeckList.jsx` to `src/pages/DeckListPage.jsx` for consistency.
-5.  **Refactor `ImageSelection.jsx`:** Consider if `ImageSelection.jsx` should be a generic component or part of a specific page flow (e.g., `src/pages/DeckImageViewerPage.jsx`).
+1.  **Restructure Pages:** Move page components (`HomePage.jsx`, `LoginPage.jsx`, `DeckListPage.jsx`, `ImageSelectorPage.jsx`) from `src/pages/` into feature-specific `pages` subdirectories within `src/features/` (e.g., `src/features/content_dashboard/pages/HomePage.jsx`).
+2.  **Relocate Components:** Move shared layout components (`Sidebar.jsx`, `Header.jsx`, `NavigationTabs.jsx`) to `src/components/layout/`. Move content dashboard-specific components (`StatCard.jsx`, `SimplePieChart.jsx`) to `src/features/content_dashboard/components/`.
+3.  **Update Imports:** Adjust import paths in `src/App.jsx`, `src/components/layout/MainLayout.jsx` (if applicable), and any other files referencing the moved components.
+4.  **(Done)** Rename `DeckList.jsx` to `DeckListPage.jsx` (assuming this was done previously).
+5.  **(Done)** Place `ImageSelectorPage.jsx` within the `image_selection` feature.
 
 ## Routing Changes (`src/App.jsx`)
 
@@ -112,7 +115,7 @@ function App() {
 
 ## Next Steps
 
-1.  Implement the folder restructuring.
-2.  Rename files and update import paths.
-3.  Modify `src/App.jsx` with the new routing logic.
+1.  Implement the folder restructuring as outlined above (create feature directories and move pages).
+2.  Update import paths in `src/App.jsx` and other relevant files.
+3.  Ensure routing in `src/App.jsx` correctly points to the new page locations.
 4.  Test the application flow thoroughly.

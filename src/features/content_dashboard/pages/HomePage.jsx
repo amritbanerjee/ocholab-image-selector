@@ -1,16 +1,16 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'; // Adjusted path
+import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui/card'; // Updated path
 // Assuming you have an icon library like react-icons
 import { FiHome, FiClock, FiCalendar, FiSettings, FiGrid, FiBarChart2, FiUsers, FiBell, FiPlus, FiMoreHorizontal, FiArrowLeft, FiArrowRight, FiTrendingDown, FiTrendingUp, FiCheckCircle, FiXCircle, FiLogOut } from 'react-icons/fi'; // Added FiLogOut
 import { FaPaypal, FaCcVisa, FaGoogle, FaApple, FaCcMastercard } from 'react-icons/fa';
 import { format } from 'date-fns'; // Import date-fns for formatting
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts'; // Import BarChart components
-import Sidebar from '../features/dashboard/Sidebar'; // Added import
-import Header from '../features/dashboard/Header'; // Added import
-import NavigationTabs from '../features/dashboard/NavigationTabs'; // Added import
-import StatCard from '../features/dashboard/StatCard'; // Added import
-import SimplePieChart from '../features/dashboard/SimplePieChart'; // Added import
+// import Sidebar from '../features/dashboard/Sidebar'; // Removed import
+// import Header from '../features/dashboard/Header'; // Removed import
+import NavigationTabs from '../../../components/layout/NavigationTabs'; // Updated path
+import StatCard from '../components/StatCard'; // Updated path
+import SimplePieChart from '../components/SimplePieChart'; // Updated path
 
 
 
@@ -94,7 +94,7 @@ const getPaymentIcon = (account) => {
   return null;
 };
 
-const DashboardPage = ({ supabase, session }) => {
+const HomePage = ({ supabase, session }) => {
   const [stats, setStats] = useState({
     totalDecks: 0,
     totalCards: 0,
@@ -259,10 +259,11 @@ const DashboardPage = ({ supabase, session }) => {
    }, [stats.reviewProgress]);
 
   return (
-    <div className="flex h-screen bg-[#16181c] overflow-hidden">
-      <Sidebar />
-      <div className="flex-1 flex flex-col min-h-0">
-        <Header userName={userName} handleLogout={handleLogout} />
+    // Removed outer flex container and Sidebar, handled by MainLayout
+    <div className="flex-1 flex flex-col overflow-hidden">
+      {/* Header is now handled by MainLayout or potentially removed/reintegrated */}
+      {/* <Header userName={userName} handleLogout={handleLogout} /> */}
+      <main className="flex-1 overflow-x-hidden overflow-y-auto bg-[#121417] p-6">
         <NavigationTabs />
         {/* Main content area */}
         <div className="flex-1 p-6 space-y-6 overflow-y-auto">
@@ -422,12 +423,12 @@ const DashboardPage = ({ supabase, session }) => {
             </div>
           </div>
         </div>
-      </div>
-    </div>
+      </main> {/* Corrected closing tag for main */}
+    </div> // Added closing tag for the outer div
   );
 };
 
-export default DashboardPage;
+export default HomePage;
 
 // Mock data for the new charts
 const mockLiveDecksData = [
