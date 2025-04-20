@@ -193,20 +193,30 @@ const ImageSelectorPage = ({ supabase, session }) => {
   return (
     // Use dark background matching HomePage
     <div className="flex flex-col items-center justify-start flex-grow p-4 pt-6 bg-[#121417] min-h-screen text-white">
-      {/* Header Section - Simplified */} 
-      <div className="w-full max-w-6xl mb-6 text-center">
-        <h1 className="text-2xl font-bold mb-1">{deckName}</h1>
-        <p className="text-lg text-gray-400">Select the best image for: <span className="font-semibold text-gray-200">{card.cardName}</span></p>
-        <p className="text-sm text-gray-500">(Card {currentIndex + 1} of {cards.length})</p>
-      </div>
 
-      {/* Image Display Area within a Card-like structure */} 
-      <div className="w-full max-w-6xl px-4"> {/* Added padding */} 
-        {/* Image Grid */} 
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6"> {/* Responsive grid */} 
-          {card.images && card.images.length > 0 ? (
-            card.images.map((image) => (
-              <div
+
+      {/* Main Content Area with Cards */} 
+      <div className="w-full max-w-6xl px-4 grid grid-cols-12 gap-6"> 
+        {/* Deck Info Card */} 
+        <Card className="bg-[#1f2328] border border-gray-700 text-white shadow-md rounded-lg overflow-hidden col-span-3">
+          <CardContent className="p-6">
+            <h1 className="text-2xl font-bold mb-1">{deckName}</h1>
+            <p className="text-lg text-gray-400">Select the best image for: <span className="font-semibold text-gray-200">{card.cardName}</span></p>
+            <p className="text-sm text-gray-500">(Card {currentIndex + 1} of {cards.length})</p>
+          </CardContent>
+        </Card>
+
+        {/* Image Selection Card */} 
+        <Card className="bg-[#1f2328] border border-gray-700 text-white shadow-md rounded-lg overflow-hidden col-span-9">
+          <CardHeader>
+            <CardTitle className="text-xl font-semibold">{card.cardName}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {/* Image Grid - Now 4x4 */} 
+            <div className="grid grid-cols-2 gap-6"> 
+              {card.images && card.images.length > 0 ? (
+                card.images.map((image) => (
+                  <div
                 key={image.id}
                 className="relative group bg-[#1f2328] border border-gray-700 rounded-2xl shadow-lg overflow-hidden aspect-[9/16] transition-transform duration-200 ease-in-out hover:scale-105"
                 // Removed direct click handler from the container
@@ -234,8 +244,10 @@ const ImageSelectorPage = ({ supabase, session }) => {
             <div className="col-span-full flex items-center justify-center h-64 text-gray-500 bg-[#1f2328] border border-gray-700 rounded-2xl">
               No images found for this card.
             </div>
-          )}
-        </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Removed Arrow Buttons and Swipe Hint */} 
