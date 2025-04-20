@@ -3,8 +3,8 @@ import { useState, useEffect } from 'react'
 import { supabase } from './lib/supabaseClient'
 import Login from './components/Login'
 import ProtectedRoute from './components/ProtectedRoute'
-import ImageSelectorPage from './features/image_selection/pages/ImageSelectorPage'; // Updated path with extension
-import DeckListPage from './features/deck_review/pages/DeckListPage'; // Corrected path to actual filename
+import ImageSelectorPage from './features/content_dashboard/pages/ImageSelectorPage'; // Updated path with extension
+import DeckListPage from './features/content_dashboard/pages/DeckListPage'; // Corrected path to actual filename
 // import Navbar from './components/layout/Navbar' // Removed, layout handles navigation
 import HomePage from './features/content_dashboard/pages/HomePage'; // Updated path
 import MainLayout from './components/layout/MainLayout'; // Import the new layout

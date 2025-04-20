@@ -36,11 +36,7 @@ src/
 │   │   │   └── SimplePieChart.jsx
 │   │   └── pages/
 │   │       └── HomePage.jsx      # Main content dashboard view.
-│   ├── deck_review/      # Features related to reviewing decks
-│   │   └── pages/
 │   │       └── DeckListPage.jsx  # Page for listing available decks for review.
-│   ├── image_selection/  # Features related to image selection for cards
-│   │   └── pages/
 │   │       └── ImageSelectorPage.jsx # Page for selecting images for a specific deck.
 │   └── ...               # Other features (e.g., card_creation, settings)
 └── assets/             # Static assets (images, fonts, etc.)
@@ -48,7 +44,7 @@ src/
 
 **Key Changes:**
 
-1.  **Restructure Pages:** Move page components (`HomePage.jsx`, `LoginPage.jsx`, `DeckListPage.jsx`, `ImageSelectorPage.jsx`) from `src/pages/` into feature-specific `pages` subdirectories within `src/features/` (e.g., `src/features/content_dashboard/pages/HomePage.jsx`).
+1.  **Restructure Pages:** Move page components (`HomePage.jsx`, `LoginPage.jsx`, `DeckListPage.jsx`, `ImageSelectorPage.jsx`) from `src/pages/` into feature-specific `pages` subdirectories within `src/features/` (e.g., `src/features/content_dashboard/pages/HomePage.jsx`). So Decklistpage, ImageSelectorPage, and HomePage are now within the content_dashboard feature.
 2.  **Relocate Components:** Move shared layout components (`Sidebar.jsx`, `Header.jsx`, `NavigationTabs.jsx`) to `src/components/layout/`. Move content dashboard-specific components (`StatCard.jsx`, `SimplePieChart.jsx`) to `src/features/content_dashboard/components/`.
 3.  **Update Imports:** Adjust import paths in `src/App.jsx`, `src/components/layout/MainLayout.jsx` (if applicable), and any other files referencing the moved components.
 4.  **(Done)** Rename `DeckList.jsx` to `DeckListPage.jsx` (assuming this was done previously).
