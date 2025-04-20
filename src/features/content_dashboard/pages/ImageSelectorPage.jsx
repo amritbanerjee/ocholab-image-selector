@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useParams, useLocation } from 'react-router-dom';
-import { useSwipeable } from 'react-swipeable'; // Keep swipe for potential future use
+// import { useSwipeable } from 'react-swipeable'; // Remove swipe handlers
+import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui/card'; // Import Card components
+import { FiHeart } from 'react-icons/fi'; // Import Heart icon
 
 const ImageSelectorPage = ({ supabase, session }) => {
   const [cards, setCards] = useState([]);
@@ -9,29 +11,26 @@ const ImageSelectorPage = ({ supabase, session }) => {
   const [error, setError] = useState(null);
   const { deckId } = useParams();
   const location = useLocation();
-  // Attempt to get deckName from location state, fallback if needed
-  const deckName = location.state?.deckName || `Deck ID: ${deckId}`; 
+  const deckName = location.state?.deckName || `Deck ID: ${deckId}`;
 
   useEffect(() => {
     const fetchCards = async () => {
       setLoading(true);
-      setError(null); // Reset error on new fetch
+      setError(null);
       try {
-        // Fetch cards for this deck needing image selection
         const { data: cardData, error: cardError } = await supabase
           .from('cards')
-          .select('id, title_key, asset_url, deck_id') // Select only necessary fields
+          .select('id, title_key, asset_url, deck_id')
           .eq('status', 'choosebaseimage')
           .eq('deck_id', deckId);
 
         if (cardError) throw cardError;
         if (!cardData || cardData.length === 0) {
-          setCards([]); // Set empty cards if none found
+          setCards([]);
           setLoading(false);
           return;
         }
 
-        // Get all title_keys for translation fetching
         const titleKeys = cardData.map(card => card.title_key).filter(Boolean);
         let translationMap = {};
         if (titleKeys.length > 0) {
@@ -46,24 +45,21 @@ const ImageSelectorPage = ({ supabase, session }) => {
           }, {});
         }
 
-        // Process cards with images and translations
         const cardsWithImages = cardData.map(card => {
           let assetData = {};
           try {
-            // Ensure asset_url is parsed correctly
             assetData = typeof card.asset_url === 'string' ? JSON.parse(card.asset_url) : (card.asset_url || {});
           } catch (parseError) {
             console.error('Error parsing asset_url:', parseError, card.asset_url);
-            assetData = {}; // Default to empty if parsing fails
+            assetData = {};
           }
-          
-          // Filter out potential non-image entries if necessary, map to expected structure
+
           const images = Object.entries(assetData)
-            .filter(([key, url]) => url && typeof url === 'string') // Basic validation
+            .filter(([key, url]) => url && typeof url === 'string' && key !== 'selected') // Exclude 'selected' key if present
             .map(([key, url]) => ({
-              id: key, // Use the key from assetData as id
+              id: key,
               url,
-              title: key // Use the key as title for now
+              title: key
             }));
 
           return {
@@ -87,40 +83,56 @@ const ImageSelectorPage = ({ supabase, session }) => {
     }
   }, [supabase, deckId]);
 
-  // --- Image Selection Handler --- 
   const handleImageSelect = async (selectedImage) => {
-    if (!cards[currentIndex]) return; // Guard against index out of bounds
+    if (!cards[currentIndex]) return;
 
-    setLoading(true); // Indicate processing
+    setLoading(true);
     setError(null);
     try {
       const currentCard = cards[currentIndex];
-      const currentImages = currentCard.images.reduce((acc, img) => ({ ...acc, [img.id]: img.url }), {});
-      
+      // Fetch existing asset_url data to preserve non-image keys if necessary
+      const { data: currentCardData, error: fetchError } = await supabase
+        .from('cards')
+        .select('asset_url')
+        .eq('id', currentCard.id)
+        .single();
+
+      if (fetchError) throw fetchError;
+
+      let existingAssetData = {};
+      try {
+        existingAssetData = typeof currentCardData.asset_url === 'string' ? JSON.parse(currentCardData.asset_url) : (currentCardData.asset_url || {});
+      } catch (parseError) {
+        console.error('Error parsing existing asset_url:', parseError, currentCardData.asset_url);
+        // Decide how to handle parse error - maybe proceed with empty object or throw?
+        existingAssetData = {};
+      }
+
+      // Construct the updated asset_url, preserving other keys
+      const updatedAssetUrl = JSON.stringify({
+        ...existingAssetData, // Keep existing data
+        selected: selectedImage.url, // Add/update the selected image URL
+      });
+
       const { error: updateError } = await supabase
         .from('cards')
         .update({
-          status: 'imagechosen', // Update status
-          selected_image: selectedImage.url, // Store the selected image URL
-          asset_url: JSON.stringify({ // Update asset_url, keeping existing images and marking selected
-            selected: selectedImage.url,
-            ...currentImages 
-          })
+          status: 'imagechosen',
+          selected_image: selectedImage.url,
+          asset_url: updatedAssetUrl
         })
         .eq('id', currentCard.id);
 
       if (updateError) throw updateError;
 
-      // Move to the next card if successful and not the last card
       if (currentIndex < cards.length - 1) {
         setCurrentIndex(currentIndex + 1);
       } else {
-        // Optional: Handle completion (e.g., show message, navigate)
         console.log('Finished selecting images for this deck!');
-        // Maybe set a state to show completion message instead of just logging
-        // Or navigate back to the deck list: navigate('/decks'); (need useNavigate hook)
-        // For now, just stay on the page showing the last card's completion state
-        // We might need a different state for 'completed' vs 'no cards'
+        // Consider navigating away or showing a persistent completion message
+        // For now, we might fall through to the 'All images reviewed' state below
+        // To ensure it shows, we can manually set the index beyond the bounds
+        setCurrentIndex(cards.length); // Move index past the end
       }
     } catch (error) {
       console.error('Error updating card:', error);
@@ -130,26 +142,15 @@ const ImageSelectorPage = ({ supabase, session }) => {
     }
   };
 
-  // --- Basic Navigation --- 
-  const handlePrev = () => {
-    setCurrentIndex((prev) => (prev === 0 ? cards.length - 1 : prev - 1));
-  };
-  const handleNext = () => {
-    setCurrentIndex((prev) => (prev === cards.length - 1 ? 0 : prev + 1));
-  };
-
-  // --- Swipe Handlers (optional but kept for now) ---
-  const handlers = useSwipeable({
-    onSwipedLeft: handleNext,
-    onSwipedRight: handlePrev,
-    preventDefaultTouchmoveEvent: true,
-    trackMouse: true
-  });
+  // Remove Basic Navigation and Swipe Handlers
+  // const handlePrev = () => { ... };
+  // const handleNext = () => { ... };
+  // const handlers = useSwipeable({ ... });
 
   // --- Render Logic --- 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen">
+      <div className="flex items-center justify-center h-screen bg-[#121417]">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
       </div>
     );
@@ -157,32 +158,31 @@ const ImageSelectorPage = ({ supabase, session }) => {
 
   if (error) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="p-4 text-sm text-red-700 bg-red-100 rounded-lg" role="alert">
+      <div className="flex items-center justify-center h-screen bg-[#121417]">
+        <div className="p-4 text-sm text-red-300 bg-red-900/50 rounded-lg" role="alert">
           Error loading images: {error}
         </div>
       </div>
     );
   }
 
-  if (cards.length === 0) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="p-4 text-sm text-gray-700 bg-gray-100 rounded-lg" role="alert">
-          No images available for selection in this deck.
+  // Handle case where all cards have been processed (currentIndex is out of bounds)
+  if (currentIndex >= cards.length) {
+     return (
+      <div className="flex items-center justify-center h-screen bg-[#121417]">
+        <div className="p-4 text-sm text-green-300 bg-green-900/50 rounded-lg" role="alert">
+          All images reviewed for this deck!
         </div>
       </div>
     );
   }
 
-  // Ensure currentIndex is valid after data load or card selection
-  if (currentIndex >= cards.length && cards.length > 0) {
-     // This case might happen if the last card was just processed
-     // For now, just show a completion message, or navigate away
-     return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="p-4 text-sm text-green-700 bg-green-100 rounded-lg" role="alert">
-          All images reviewed for this deck!
+  // Handle case where there were no cards to begin with
+  if (cards.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-[#121417]">
+        <div className="p-4 text-sm text-gray-400 bg-gray-800 rounded-lg" role="alert">
+          No images available for selection in this deck.
         </div>
       </div>
     );
@@ -190,74 +190,56 @@ const ImageSelectorPage = ({ supabase, session }) => {
 
   const card = cards[currentIndex];
 
-  // Basic structure - will be refined into two panels later
   return (
-    // Using flex-grow to fill available space in a potential flex container (like HomePage)
-    <div className="flex flex-col items-center justify-start flex-grow p-4 pt-6" {...handlers}>
-      {/* Header Section */}
-      <div className="w-full max-w-4xl mb-4">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-2">
-          <h1 className="text-xl font-semibold text-gray-800">{deckName} - Image Selection</h1>
-          <span className="text-md text-gray-600 font-medium mt-1 md:mt-0">{card.cardName} (Card {currentIndex + 1} of {cards.length})</span>
-        </div>
+    // Use dark background matching HomePage
+    <div className="flex flex-col items-center justify-start flex-grow p-4 pt-6 bg-[#121417] min-h-screen text-white">
+      {/* Header Section - Simplified */} 
+      <div className="w-full max-w-6xl mb-6 text-center">
+        <h1 className="text-2xl font-bold mb-1">{deckName}</h1>
+        <p className="text-lg text-gray-400">Select the best image for: <span className="font-semibold text-gray-200">{card.cardName}</span></p>
+        <p className="text-sm text-gray-500">(Card {currentIndex + 1} of {cards.length})</p>
       </div>
 
-      {/* Image Display Area (Simulating the Right Panel) */}
-      <div className="w-full max-w-4xl flex items-center justify-center space-x-4">
-        {/* Prev Button */}
-        <button 
-          onClick={handlePrev} 
-          className="p-2 text-gray-600 hover:text-gray-900 disabled:opacity-30 disabled:cursor-not-allowed"
-          disabled={cards.length <= 1}
-          aria-label="Previous Card"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-          </svg>
-        </button>
-
-        {/* Image Grid */}
-        <div className="grid grid-cols-2 gap-4 flex-grow" style={{ maxWidth: '800px' }}> {/* Adjust grid/max-width as needed */}
+      {/* Image Display Area within a Card-like structure */} 
+      <div className="w-full max-w-6xl px-4"> {/* Added padding */} 
+        {/* Image Grid */} 
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6"> {/* Responsive grid */} 
           {card.images && card.images.length > 0 ? (
             card.images.map((image) => (
               <div
                 key={image.id}
-                className="relative aspect-[3/4] bg-white rounded-lg shadow-md overflow-hidden cursor-pointer hover:ring-4 hover:ring-blue-400 focus:outline-none focus:ring-4 focus:ring-blue-400 transition duration-150 ease-in-out"
-                onClick={() => handleImageSelect(image)}
-                tabIndex={0} // Make it focusable
-                onKeyPress={(e) => e.key === 'Enter' && handleImageSelect(image)} // Allow selection with Enter key
+                className="relative group bg-[#1f2328] border border-gray-700 rounded-2xl shadow-lg overflow-hidden aspect-[9/16] transition-transform duration-200 ease-in-out hover:scale-105"
+                // Removed direct click handler from the container
               >
-                <img src={image.url} alt={image.title || 'Candidate image'} className="w-full h-full object-contain p-1" />
-                {/* Optional: Overlay with title if needed */}
-                {/* <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-2">
-                  <h2 className="text-sm font-semibold text-white truncate">{image.title || image.id}</h2>
-                </div> */}
+                <img 
+                  src={image.url} 
+                  alt={image.title || 'Candidate image'} 
+                  className="w-full h-full object-cover" 
+                  loading="lazy" // Add lazy loading
+                />
+                {/* Overlay for Name and Like Button */} 
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent p-4 flex flex-col justify-end">
+                  <h2 className="text-lg font-semibold text-white truncate mb-2" title={image.title || image.id}>{image.title || image.id}</h2>
+                  <button 
+                    onClick={() => handleImageSelect(image)}
+                    className="absolute bottom-4 right-4 bg-white/20 backdrop-blur-sm p-3 rounded-full text-white hover:bg-white/30 focus:outline-none focus:ring-2 focus:ring-white/50 transition duration-150 ease-in-out"
+                    aria-label="Select this image"
+                  >
+                    <FiHeart size={20} />
+                  </button>
+                </div>
               </div>
             ))
           ) : (
-            <div className="col-span-2 flex items-center justify-center h-64 text-gray-500">
+            <div className="col-span-full flex items-center justify-center h-64 text-gray-500 bg-[#1f2328] border border-gray-700 rounded-2xl">
               No images found for this card.
             </div>
           )}
         </div>
-
-        {/* Next Button */}
-        <button 
-          onClick={handleNext} 
-          className="p-2 text-gray-600 hover:text-gray-900 disabled:opacity-30 disabled:cursor-not-allowed"
-          disabled={cards.length <= 1}
-          aria-label="Next Card"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-          </svg>
-        </button>
       </div>
 
-      {/* Optional: Add swipe hint or other controls if needed */}
-      {/* <div className="mt-4 text-gray-500 text-sm">
-        Swipe left/right or use buttons to navigate cards. Click an image to select it.
-      </div> */}
+      {/* Removed Arrow Buttons and Swipe Hint */} 
+
     </div>
   );
 };
