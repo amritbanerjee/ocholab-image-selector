@@ -2,6 +2,7 @@ import React from 'react';
 import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar'; // Updated path
 import Header from './Header'; // Updated path
+import NavigationTabs from './NavigationTabs'; // Import NavigationTabs
 import { useNavigate } from 'react-router-dom'; // Import useNavigate
 
 const MainLayout = ({ session, supabase }) => { // Accept session and supabase as props
@@ -28,6 +29,8 @@ const MainLayout = ({ session, supabase }) => { // Accept session and supabase a
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Render Header with props */}
         <Header userName={userName} onLogout={handleLogout} />
+        {/* Render NavigationTabs below Header */}
+        <NavigationTabs />
         <main className="flex-1 overflow-x-hidden overflow-y-auto bg-[#121417] p-6">
           <Outlet /> {/* Child routes will render here */}
         </main>

@@ -8,7 +8,7 @@ import { format } from 'date-fns'; // Import date-fns for formatting
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts'; // Import BarChart components
 // import Sidebar from '../features/dashboard/Sidebar'; // Removed import
 // import Header from '../features/dashboard/Header'; // Removed import
-import NavigationTabs from '../../../components/layout/NavigationTabs'; // Updated path
+// import NavigationTabs from '../../../components/layout/NavigationTabs'; // Removed, now in MainLayout
 import StatCard from '../components/StatCard'; // Updated path
 import SimplePieChart from '../components/SimplePieChart'; // Updated path
 
@@ -264,7 +264,8 @@ const HomePage = ({ supabase, session }) => {
       {/* Header is now handled by MainLayout or potentially removed/reintegrated */}
       {/* <Header userName={userName} handleLogout={handleLogout} /> */}
       <main className="flex-1 overflow-x-hidden overflow-y-auto bg-[#121417] p-6">
-        <NavigationTabs />
+        {/* Navigation Tabs - Removed, now in MainLayout */}
+        {/* <NavigationTabs /> */}
         {/* Main content area */}
         <div className="flex-1 p-6 space-y-6 overflow-y-auto">
           {/* Top 3 summary cards - Updated with Supabase data */}
