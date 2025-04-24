@@ -3,6 +3,7 @@ import { useParams, useLocation } from 'react-router-dom';
 // import { useSwipeable } from 'react-swipeable'; // Remove swipe handlers
 import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui/card'; // Import Card components
 import { FiHeart } from 'react-icons/fi'; // Import Heart icon
+import './ImageSelectorPage.css'; // Import CSS for animations
 
 const ImageSelectorPage = ({ supabase, session }) => {
   const [cards, setCards] = useState([]);
@@ -121,6 +122,12 @@ const Backdrop = ({ onClick }) => (
   />
 );
 
+const pulseAnimation = {
+  '0%': { transform: 'scale(1)', color: 'white' },
+  '50%': { transform: 'scale(1.3)', color: 'red' },
+  '100%': { transform: 'scale(1)', color: 'white' }
+};
+
 const handleConfirmSelection = async () => {
     if (!selectedImage || !cards[currentIndex]) return;
     
@@ -237,7 +244,7 @@ const handleConfirmSelection = async () => {
         <div className="fixed bottom-8 left-0 right-0 flex justify-center z-20 animate-bounce">
           <button 
             onClick={handleConfirmSelection}
-            className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-full shadow-lg transition-colors"
+            className="px-6 py-3 bg-red-600 hover:bg-red-700 text-white font-medium rounded-full shadow-lg transition-colors"
           >
             Confirm Selection
           </button>
@@ -281,20 +288,16 @@ const handleConfirmSelection = async () => {
                     selectedImage?.id === image.id ? 'scale-110' : ''
                   }`}
                 />
-                {selectedImage?.id === image.id && (
-                  <button 
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleFavoriteImage();
-                    }}
-                    className="absolute bottom-4 right-4 p-2 bg-blue-600 rounded-full hover:bg-blue-700 transition-colors"
-                  >
-                    <FiHeart className="text-white" size={20} />
-                  </button>
-                )}
+                
                 {/* Heart icon overlay - initially hidden, appears on hover/focus */}
-                <div className="absolute top-2 right-2 p-1.5 bg-black/50 rounded-full opacity-0 group-hover:opacity-100 group-focus:opacity-100 transition-opacity">
-                  <FiHeart className="w-5 h-5 text-white" />
+                <div className={`absolute top-2 right-2 transition-opacity ${selectedImage?.id === image.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 group-focus:opacity-100'}`}>
+                  <FiHeart 
+  className={`w-8 h-8 cursor-pointer ${selectedImage?.id === image.id ? 'text-red-500 fill-red-500 animate-pulse' : 'text-white hover:text-red-500'}`} 
+  style={selectedImage?.id === image.id ? {
+    animation: 'pulse 1s infinite',
+    color: 'red'
+  } : {}}
+/>
                 </div>
               </button>
             ))}
