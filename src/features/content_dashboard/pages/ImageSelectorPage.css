@@ -22,19 +22,20 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  height: 100vh;
+  justify-content: flex-start; /* Align items to the start */
+  min-height: 100vh; /* Use min-height */
+  width: 100%; /* Ensure full width */
   background-color: #121417;
   color: white;
 }
 
 .image-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  grid-template-columns: repeat(4, 1fr); /* Force 4 equal columns */
   gap: 16px;
   padding: 16px;
-  width: 100%;
-  max-width: 1200px;
+  width: 100%; /* Ensure grid takes full width */
+  /* max-width: 1200px; Removed to allow full width */
 }
 
 .image-item {

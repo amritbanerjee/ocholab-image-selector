@@ -4,6 +4,8 @@ import { useParams, useLocation } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui/card'; // Import Card components
 import { FiHeart } from 'react-icons/fi'; // Import Heart icon
 import './ImageSelectorPage.css'; // Import CSS for animations
+import DeckDetails from '../components/DeckDetails'; // Import DeckDetails
+import CardDetails from '../components/CardDetails'; // Import CardDetails
 
 const ImageSelectorPage = ({ supabase, session }) => {
   const [cards, setCards] = useState([]);
@@ -194,116 +196,87 @@ const handleConfirmSelection = async () => {
   // const handleNext = () => { ... };
   // const handlers = useSwipeable({ ... });
 
+  const currentCard = cards[currentIndex]; // Get current card for easier access
+
   // --- Render Logic --- 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-screen bg-[#121417]">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="flex items-center justify-center h-screen bg-[#121417]">
-        <div className="p-4 text-sm text-red-300 bg-red-900/50 rounded-lg" role="alert">
-          Error loading images: {error}
-        </div>
-      </div>
-    );
-  }
-
-  // Handle case where all cards have been processed (currentIndex is out of bounds)
-  if (currentIndex >= cards.length) {
-     return (
-      <div className="flex items-center justify-center h-screen bg-[#121417]">
-        <div className="p-4 text-sm text-green-300 bg-green-900/50 rounded-lg" role="alert">
-          All images reviewed for this deck!
-        </div>
-      </div>
-    );
-  }
-
-  // Handle case where there were no cards to begin with
-  if (cards.length === 0) {
-    return (
-      <div className="flex items-center justify-center h-screen bg-[#121417]">
-        <div className="p-4 text-sm text-gray-400 bg-gray-800 rounded-lg" role="alert">
-          No images available for selection in this deck.
-        </div>
-      </div>
-    );
-  }
-
-  const card = cards[currentIndex];
-
   return (
-    <div className="flex flex-col items-center justify-start flex-grow p-4 pt-6 bg-[#121417] min-h-screen text-white">
-      {/* Confirm Button - Only shows when an image is selected */}
-      {selectedImage && (
-        <div className="fixed bottom-8 left-0 right-0 flex justify-center z-20 animate-bounce">
-          <button 
-            onClick={handleConfirmSelection}
-            className="px-6 py-3 bg-red-600 hover:bg-red-700 text-white font-medium rounded-full shadow-lg transition-colors"
-          >
-            Confirm Selection
-          </button>
+    <div className="image-selector-container p-4">
+      {/* Container for Deck and Card Details */}
+      <div className="flex w-full justify-between space-x-4 mb-4">
+        <div className="flex-1">
+          <DeckDetails deckName={deckName} deckDescription={deckDescription} />
         </div>
-      )}
-      
-      {/* Main Content Area with Cards */}
-      <div className="w-full max-w-6xl px-4 grid grid-cols-12 gap-6 min-h-[500px]"> {/* Removed h-[80vh] */}
-        {/* Deck Info Card */}
-        <Card className="bg-[#1f2328] border border-gray-700 text-white shadow-md rounded-lg overflow-hidden col-span-3 h-full flex flex-col">
-          <CardContent className="p-6 flex-1 flex flex-col justify-center">
-            <div className="mb-4">
-            <h1 className="text-2xl font-bold">{deckName}</h1>
-            {deckDescription && (
-              <p className="text-sm text-gray-400 mt-1">{deckDescription}</p>
-            )}
-          </div>
-            <p className="text-lg text-gray-400">Select the best image for: <span className="font-semibold text-gray-200">{card.cardName}</span></p>
-            {card.cardDescription && <p className="text-sm text-gray-400 mt-2">{card.cardDescription}</p>}
-            <p className="text-sm text-gray-500 mt-2">(Card {currentIndex + 1} of {cards.length})</p>
-          </CardContent>
-        </Card>
-        {/* Image Selection Grid */}
-        {/* Removed redundant outer div, kept inner div with items-start */}
-        <div className="col-span-9 items-start"> 
-            <div className="grid grid-cols-2 gap-4 w-full"> 
-              {card.images.slice(0, 4).map((image, idx) => (
-                <button
+        <div className="flex-1">
+          <CardDetails cardName={currentCard?.cardName} cardDescription={currentCard?.cardDescription} />
+        </div>
+      </div>
+
+      {/* Existing loading/error/content rendering logic */}
+      {loading ? (
+        <div className="flex items-center justify-center h-screen bg-[#121417]">
+          <p>Loading cards...</p>
+        </div>
+      ) : error ? (
+        <div className="flex items-center justify-center h-screen bg-[#121417]">
+          <p className="text-red-500">Error: {error}</p>
+        </div>
+      ) : cards.length === 0 ? (
+        <div className="flex items-center justify-center h-screen bg-[#121417]">
+          <p>No images found for this deck matching the criteria.</p>
+        </div>
+      ) : currentIndex >= cards.length ? (
+        <div className="flex items-center justify-center h-screen bg-[#121417]">
+          <p>Finished selecting images for this deck!</p>
+        </div>
+      ) : (
+        <div className="w-full">
+          {/* Image Grid */}
+          <div className="image-grid mb-4">
+            {currentCard.images.map((image) => (
+              <div
                 key={image.id}
-                className={`relative w-full bg-[#23272f] rounded-2xl overflow-hidden border transition-all duration-300 group aspect-[3/4] ${
-                  selectedImage?.id === image.id 
-                    ? 'border-blue-500 scale-110 z-10 shadow-xl' 
-                    : 'border-gray-700 hover:border-blue-400 hover:scale-102'
-                }`}
+                className={`image-item ${selectedImage?.id === image.id ? 'selected-image' : ''}`}
                 onClick={() => handleImageSelect(image)}
               >
-                <img
-                  src={image.url}
-                  alt={image.title}
-                  className={`w-full h-full object-cover transition-transform duration-300 ${
-                    selectedImage?.id === image.id ? 'scale-110' : ''
-                  }`}
-                />
-                
-                {/* Heart icon overlay - initially hidden, appears on hover/focus */}
-                <div className={`absolute top-2 right-2 transition-opacity ${selectedImage?.id === image.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 group-focus:opacity-100'}`}>
-                  <FiHeart 
-  className={`w-8 h-8 cursor-pointer ${selectedImage?.id === image.id ? 'text-red-500 fill-red-500 animate-pulse' : 'text-white hover:text-red-500'}`} 
-  style={selectedImage?.id === image.id ? {
-    animation: 'pulse 1s infinite',
-    color: 'red'
-  } : {}}
-/>
-                </div>
-              </button>
+                <img src={image.url} alt={image.title || `Image ${image.id}`} className="w-full h-auto object-cover rounded" />
+              </div>
             ))}
           </div>
+
+          {/* Selected Image Modal */}
+          {selectedImage && (
+            <>
+              <Backdrop onClick={handleDeselectImage} />
+              <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
+                <Card className="relative w-full max-w-lg bg-card text-card-foreground shadow-lg rounded-lg">
+                  <CardHeader>
+                    <CardTitle>Confirm Selection</CardTitle>
+                  </CardHeader>
+                  <CardContent className="flex flex-col items-center">
+                    <img src={selectedImage.url} alt="Selected image" className="max-w-full max-h-96 object-contain rounded mb-4" />
+                    <p className="mb-4">Select this image as the base image for "{currentCard.cardName}"?</p>
+                    <div className="flex space-x-4">
+                      <button 
+                        onClick={handleConfirmSelection} 
+                        className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded flex items-center space-x-2"
+                      >
+                        <FiHeart className="heart-icon" />
+                        <span>Confirm</span>
+                      </button>
+                      <button 
+                        onClick={handleDeselectImage} 
+                        className="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </>
+          )}
         </div>
-      </div>
+      )}
     </div>
   );
 };
