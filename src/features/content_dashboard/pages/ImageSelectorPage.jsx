@@ -107,28 +107,31 @@ const ImageSelectorPage = ({ supabase, session }) => {
     }
   }, [supabase, deckId]);
 
-  const handleImageSelect = async (selectedImage) => {
+  const handleImageSelect = (image) => {
     if (!cards[currentIndex]) return;
-    
-    setSelectedImage(selectedImage);
+    setSelectedImage(image);
 };
 
 const handleDeselectImage = () => {
     setSelectedImage(null);
 };
 
-const Backdrop = ({ onClick }) => (
-  <div 
-    className="fixed inset-0 bg-black bg-opacity-50 z-40"
-    onClick={onClick}
-  />
-);
+// Remove Backdrop as selection is now in-place
+// const Backdrop = ({ onClick }) => (
+//   <div 
+//     className="fixed inset-0 bg-black bg-opacity-50 z-40"
+//     onClick={onClick}
+//   />
+// );
 
 const pulseAnimation = {
   '0%': { transform: 'scale(1)', color: 'white' },
   '50%': { transform: 'scale(1.3)', color: 'red' },
   '100%': { transform: 'scale(1)', color: 'white' }
 };
+
+// Define styles for selected image
+const selectedImageStyle = "border-4 border-blue-500 ring-2 ring-blue-300 scale-105 transition-transform duration-200 ease-in-out";
 
 const handleConfirmSelection = async () => {
     if (!selectedImage || !cards[currentIndex]) return;
@@ -156,14 +159,29 @@ const handleConfirmSelection = async () => {
 
       // Construct the updated asset_url with baseimage for selected and rejectedbasimage for others
       const updatedAssetData = {
-        ...existingAssetData,
+        ...existingAssetData, // Keep existing non-image data
         baseimage: selectedImage.url,
-        rejectedbasimage01: card.images[0]?.url,
-        rejectedbasimage02: card.images[1]?.url,
-        rejectedbasimage03: card.images[2]?.url
       };
-      
-      const updatedAssetUrl = JSON.stringify(updatedAssetData);
+
+      // Add rejected images dynamically
+      let rejectedIndex = 1;
+      currentCard.images.forEach(img => {
+        if (img.id !== selectedImage.id) {
+          const key = `rejectedbasimage${String(rejectedIndex).padStart(2, '0')}`;
+          updatedAssetData[key] = img.url;
+          rejectedIndex++;
+        }
+      });
+
+      // Filter out null/undefined values before stringifying (optional, but good practice)
+      const filteredAssetData = Object.entries(updatedAssetData).reduce((acc, [key, value]) => {
+        if (value !== undefined && value !== null) {
+          acc[key] = value;
+        }
+        return acc;
+      }, {});
+
+      const updatedAssetUrl = JSON.stringify(filteredAssetData);
 
       const { error: updateError } = await supabase
         .from('cards')
@@ -198,6 +216,28 @@ const handleConfirmSelection = async () => {
 
   const currentCard = cards[currentIndex]; // Get current card for easier access
 
+  // Handle clicking outside the image grid to deselect
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      // Check if the click is outside the image grid container and not on the confirm button
+      const grid = document.getElementById('image-grid-container');
+      const confirmButton = document.getElementById('confirm-selection-button');
+      if (grid && !grid.contains(event.target) && (!confirmButton || !confirmButton.contains(event.target))) {
+        handleDeselectImage();
+      }
+    };
+
+    if (selectedImage) {
+      document.addEventListener('mousedown', handleClickOutside);
+    } else {
+      document.removeEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [selectedImage]); // Re-run when selectedImage changes
+
   // --- Render Logic --- 
   return (
     <div className="image-selector-container p-4">
@@ -230,50 +270,53 @@ const handleConfirmSelection = async () => {
         </div>
       ) : (
         <div className="w-full">
-          {/* Image Grid */}
+          {/* Image Grid Container */}
+          <div id="image-grid-container" className="w-full">
+            {/* Image Grid */}
           <div className="image-grid mb-4">
             {currentCard.images.map((image) => (
               <div
                 key={image.id}
-                className={`image-item ${selectedImage?.id === image.id ? 'selected-image' : ''}`}
-                onClick={() => handleImageSelect(image)}
+                className={`relative aspect-w-1 aspect-h-1 cursor-pointer group rounded-lg overflow-hidden ${selectedImage?.id === image.id ? selectedImageStyle : 'border-2 border-transparent hover:border-gray-400'}`}
+                onClick={() => handleImageSelect(image)} // Add onClick here
               >
-                <img src={image.url} alt={image.title || `Image ${image.id}`} className="w-full h-auto object-cover rounded" />
+                <img
+                  src={image.url}
+                  alt={image.title || `Image ${image.id}`}
+                  className="object-cover w-full h-full shadow-md group-hover:opacity-80 transition-opacity"
+                />
+                {/* Add overlay/icon for selected state */}
+                {selectedImage?.id === image.id && (
+                  <div className="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center transition-opacity duration-200">
+                    <FiHeart className="text-white text-4xl opacity-90" />
+                  </div>
+                )}
               </div>
             ))}
           </div>
 
-          {/* Selected Image Modal */}
+          </div>
+
+          {/* Add Confirm/Cancel Buttons conditionally */}
           {selectedImage && (
-            <>
-              <Backdrop onClick={handleDeselectImage} />
-              <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
-                <Card className="relative w-full max-w-lg bg-card text-card-foreground shadow-lg rounded-lg">
-                  <CardHeader>
-                    <CardTitle>Confirm Selection</CardTitle>
-                  </CardHeader>
-                  <CardContent className="flex flex-col items-center">
-                    <img src={selectedImage.url} alt="Selected image" className="max-w-full max-h-96 object-contain rounded mb-4" />
-                    <p className="mb-4">Select this image as the base image for "{currentCard.cardName}"?</p>
-                    <div className="flex space-x-4">
-                      <button 
-                        onClick={handleConfirmSelection} 
-                        className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded flex items-center space-x-2"
-                      >
-                        <FiHeart className="heart-icon" />
-                        <span>Confirm</span>
-                      </button>
-                      <button 
-                        onClick={handleDeselectImage} 
-                        className="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded"
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            </>
+            <div className="mt-6 flex justify-center space-x-4">
+              <button 
+                id="confirm-selection-button"
+                onClick={handleConfirmSelection} 
+                className="px-6 py-2 bg-green-500 text-white rounded hover:bg-green-600 flex items-center space-x-2 transition-colors disabled:opacity-50"
+                disabled={loading}
+              >
+                <FiHeart />
+                <span>{loading ? 'Confirming...' : 'Confirm Selection'}</span>
+              </button>
+              <button 
+                onClick={handleDeselectImage} 
+                className="px-6 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400 transition-colors disabled:opacity-50"
+                disabled={loading}
+              >
+                Cancel
+              </button>
+            </div>
           )}
         </div>
       )}
