@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useLocation } from 'react-router-dom';
 // import { useSwipeable } from 'react-swipeable'; // Remove swipe handlers
 import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui/card'; // Import Card components
-import { FiHeart } from 'react-icons/fi'; // Import Heart icon
+import { FiHeart, FiArrowLeft, FiArrowRight } from 'react-icons/fi'; // Import icons
 import './ImageSelectorPage.css'; // Import CSS for animations
 import DeckDetails from '../components/DeckDetails'; // Import DeckDetails
 import CardDetails from '../components/CardDetails'; // Import CardDetails
@@ -114,6 +114,20 @@ const ImageSelectorPage = ({ supabase, session }) => {
 
 const handleDeselectImage = () => {
     setSelectedImage(null);
+};
+
+const handlePrevious = () => {
+    if (currentIndex > 0) {
+        setCurrentIndex(currentIndex - 1);
+        setSelectedImage(null); // Deselect image when changing card
+    }
+};
+
+const handleNext = () => {
+    if (currentIndex < cards.length - 1) {
+        setCurrentIndex(currentIndex + 1);
+        setSelectedImage(null); // Deselect image when changing card
+    }
 };
 
 // Remove Backdrop as selection is now in-place
@@ -295,6 +309,23 @@ const handleConfirmSelection = async () => {
             ))}
           </div>
 
+          </div>
+          {/* Navigation Buttons */}
+          <div className="flex justify-center space-x-4 mt-4">
+            <button
+              onClick={handlePrevious}
+              disabled={currentIndex === 0}
+              className={`p-2 rounded-full bg-gray-700 text-white hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 ${currentIndex === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
+            >
+              <FiArrowLeft size={24} />
+            </button>
+            <button
+              onClick={handleNext}
+              disabled={currentIndex >= cards.length - 1}
+              className={`p-2 rounded-full bg-gray-700 text-white hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 ${currentIndex >= cards.length - 1 ? 'opacity-50 cursor-not-allowed' : ''}`}
+            >
+              <FiArrowRight size={24} />
+            </button>
           </div>
 
           {/* Add Confirm/Cancel Buttons conditionally */}
