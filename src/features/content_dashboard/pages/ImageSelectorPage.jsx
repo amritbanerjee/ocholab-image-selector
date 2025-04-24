@@ -10,6 +10,19 @@ const ImageSelectorPage = ({ supabase, session }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedImage, setSelectedImage] = useState(null);
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        handleDeselectImage();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, []);
   const { deckId } = useParams();
   const location = useLocation();
   const deckName = location.state?.deckName || `Deck ID: ${deckId}`;
@@ -96,6 +109,17 @@ const ImageSelectorPage = ({ supabase, session }) => {
     
     setSelectedImage(selectedImage);
 };
+
+const handleDeselectImage = () => {
+    setSelectedImage(null);
+};
+
+const Backdrop = ({ onClick }) => (
+  <div 
+    className="fixed inset-0 bg-black bg-opacity-50 z-40"
+    onClick={onClick}
+  />
+);
 
 const handleConfirmSelection = async () => {
     if (!selectedImage || !cards[currentIndex]) return;
