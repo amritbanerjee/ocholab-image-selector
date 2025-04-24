@@ -9,9 +9,12 @@ const ImageSelectorPage = ({ supabase, session }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [selectedImage, setSelectedImage] = useState(null);
   const { deckId } = useParams();
   const location = useLocation();
   const deckName = location.state?.deckName || `Deck ID: ${deckId}`;
+  const deckDescription = location.state?.deckDescription || '';
+  console.log('Navigation state:', location.state); // Debug log to verify state
 
   useEffect(() => {
     const fetchCards = async () => {
@@ -20,7 +23,7 @@ const ImageSelectorPage = ({ supabase, session }) => {
       try {
         const { data: cardData, error: cardError } = await supabase
           .from('cards')
-          .select('id, title_key, asset_url, deck_id')
+          .select('id, title_key, description_key, asset_url, deck_id')
           .eq('status', 'choosebaseimage')
           .eq('deck_id', deckId);
 
@@ -32,12 +35,16 @@ const ImageSelectorPage = ({ supabase, session }) => {
         }
 
         const titleKeys = cardData.map(card => card.title_key).filter(Boolean);
+        const descriptionKeys = cardData.map(card => card.description_key).filter(Boolean);
         let translationMap = {};
-        if (titleKeys.length > 0) {
+        
+        // Fetch translations for both title and description keys
+        const allKeys = [...titleKeys, ...descriptionKeys].filter(Boolean);
+        if (allKeys.length > 0) {
           const { data: translations, error: translationsError } = await supabase
             .from('translations_en')
             .select('key, value')
-            .in('key', titleKeys);
+            .in('key', allKeys);
           if (translationsError) throw translationsError;
           translationMap = translations.reduce((acc, item) => {
             acc[item.key] = item.value;
@@ -65,7 +72,8 @@ const ImageSelectorPage = ({ supabase, session }) => {
           return {
             ...card,
             images: images,
-            cardName: card.title_key ? (translationMap[card.title_key] || `Key: ${card.title_key}`) : `ID: ${card.id}`
+            cardName: card.title_key ? (translationMap[card.title_key] || `Key: ${card.title_key}`) : `ID: ${card.id}`,
+            cardDescription: card.description_key ? (translationMap[card.description_key] || `Key: ${card.description_key}`) : ''
           };
         });
 
@@ -85,7 +93,13 @@ const ImageSelectorPage = ({ supabase, session }) => {
 
   const handleImageSelect = async (selectedImage) => {
     if (!cards[currentIndex]) return;
+    
+    setSelectedImage(selectedImage);
+};
 
+const handleConfirmSelection = async () => {
+    if (!selectedImage || !cards[currentIndex]) return;
+    
     setLoading(true);
     setError(null);
     try {
@@ -104,35 +118,37 @@ const ImageSelectorPage = ({ supabase, session }) => {
         existingAssetData = typeof currentCardData.asset_url === 'string' ? JSON.parse(currentCardData.asset_url) : (currentCardData.asset_url || {});
       } catch (parseError) {
         console.error('Error parsing existing asset_url:', parseError, currentCardData.asset_url);
-        // Decide how to handle parse error - maybe proceed with empty object or throw?
         existingAssetData = {};
       }
 
-      // Construct the updated asset_url, preserving other keys
-      const updatedAssetUrl = JSON.stringify({
-        ...existingAssetData, // Keep existing data
-        selected: selectedImage.url, // Add/update the selected image URL
-      });
+      // Construct the updated asset_url with baseimage for selected and rejectedbasimage for others
+      const updatedAssetData = {
+        ...existingAssetData,
+        baseimage: selectedImage.url,
+        rejectedbasimage01: card.images[0]?.url,
+        rejectedbasimage02: card.images[1]?.url,
+        rejectedbasimage03: card.images[2]?.url
+      };
+      
+      const updatedAssetUrl = JSON.stringify(updatedAssetData);
 
       const { error: updateError } = await supabase
         .from('cards')
         .update({
-          status: 'imagechosen',
-          selected_image: selectedImage.url,
+          status: 'image_selected',
           asset_url: updatedAssetUrl
         })
         .eq('id', currentCard.id);
 
       if (updateError) throw updateError;
 
+      setSelectedImage(null);
+      
       if (currentIndex < cards.length - 1) {
         setCurrentIndex(currentIndex + 1);
       } else {
         console.log('Finished selecting images for this deck!');
-        // Consider navigating away or showing a persistent completion message
-        // For now, we might fall through to the 'All images reviewed' state below
-        // To ensure it shows, we can manually set the index beyond the bounds
-        setCurrentIndex(cards.length); // Move index past the end
+        setCurrentIndex(cards.length);
       }
     } catch (error) {
       console.error('Error updating card:', error);
@@ -191,67 +207,76 @@ const ImageSelectorPage = ({ supabase, session }) => {
   const card = cards[currentIndex];
 
   return (
-    // Use dark background matching HomePage
     <div className="flex flex-col items-center justify-start flex-grow p-4 pt-6 bg-[#121417] min-h-screen text-white">
-
-
-      {/* Main Content Area with Cards */} 
-      <div className="w-full max-w-6xl px-4 grid grid-cols-12 gap-6"> 
-        {/* Deck Info Card */} 
-        <Card className="bg-[#1f2328] border border-gray-700 text-white shadow-md rounded-lg overflow-hidden col-span-3">
-          <CardContent className="p-6">
-            <h1 className="text-2xl font-bold mb-1">{deckName}</h1>
+      {/* Confirm Button - Only shows when an image is selected */}
+      {selectedImage && (
+        <div className="fixed bottom-8 left-0 right-0 flex justify-center z-20 animate-bounce">
+          <button 
+            onClick={handleConfirmSelection}
+            className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-full shadow-lg transition-colors"
+          >
+            Confirm Selection
+          </button>
+        </div>
+      )}
+      
+      {/* Main Content Area with Cards */}
+      <div className="w-full max-w-6xl px-4 grid grid-cols-12 gap-6 min-h-[500px]"> {/* Removed h-[80vh] */}
+        {/* Deck Info Card */}
+        <Card className="bg-[#1f2328] border border-gray-700 text-white shadow-md rounded-lg overflow-hidden col-span-3 h-full flex flex-col">
+          <CardContent className="p-6 flex-1 flex flex-col justify-center">
+            <div className="mb-4">
+            <h1 className="text-2xl font-bold">{deckName}</h1>
+            {deckDescription && (
+              <p className="text-sm text-gray-400 mt-1">{deckDescription}</p>
+            )}
+          </div>
             <p className="text-lg text-gray-400">Select the best image for: <span className="font-semibold text-gray-200">{card.cardName}</span></p>
-            <p className="text-sm text-gray-500">(Card {currentIndex + 1} of {cards.length})</p>
+            {card.cardDescription && <p className="text-sm text-gray-400 mt-2">{card.cardDescription}</p>}
+            <p className="text-sm text-gray-500 mt-2">(Card {currentIndex + 1} of {cards.length})</p>
           </CardContent>
         </Card>
-
-        {/* Image Selection Card */} 
-        <Card className="bg-[#1f2328] border border-gray-700 text-white shadow-md rounded-lg overflow-hidden col-span-9">
-          <CardHeader>
-            <CardTitle className="text-xl font-semibold">{card.cardName}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {/* Image Grid - Now 4x4 */} 
-            <div className="grid grid-cols-2 gap-6"> 
-              {card.images && card.images.length > 0 ? (
-                card.images.map((image) => (
-                  <div
+        {/* Image Selection Grid */}
+        {/* Removed redundant outer div, kept inner div with items-start */}
+        <div className="col-span-9 items-start"> 
+            <div className="grid grid-cols-2 gap-4 w-full"> 
+              {card.images.slice(0, 4).map((image, idx) => (
+                <button
                 key={image.id}
-                className="relative group bg-[#1f2328] border border-gray-700 rounded-2xl shadow-lg overflow-hidden aspect-[9/16] transition-transform duration-200 ease-in-out hover:scale-105"
-                // Removed direct click handler from the container
+                className={`relative w-full bg-[#23272f] rounded-2xl overflow-hidden border transition-all duration-300 group aspect-[3/4] ${
+                  selectedImage?.id === image.id 
+                    ? 'border-blue-500 scale-110 z-10 shadow-xl' 
+                    : 'border-gray-700 hover:border-blue-400 hover:scale-102'
+                }`}
+                onClick={() => handleImageSelect(image)}
               >
-                <img 
-                  src={image.url} 
-                  alt={image.title || 'Candidate image'} 
-                  className="w-full h-full object-cover" 
-                  loading="lazy" // Add lazy loading
+                <img
+                  src={image.url}
+                  alt={image.title}
+                  className={`w-full h-full object-cover transition-transform duration-300 ${
+                    selectedImage?.id === image.id ? 'scale-110' : ''
+                  }`}
                 />
-                {/* Overlay for Name and Like Button */} 
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent p-4 flex flex-col justify-end">
-                  <h2 className="text-lg font-semibold text-white truncate mb-2" title={image.title || image.id}>{image.title || image.id}</h2>
+                {selectedImage?.id === image.id && (
                   <button 
-                    onClick={() => handleImageSelect(image)}
-                    className="absolute bottom-4 right-4 bg-white/20 backdrop-blur-sm p-3 rounded-full text-white hover:bg-white/30 focus:outline-none focus:ring-2 focus:ring-white/50 transition duration-150 ease-in-out"
-                    aria-label="Select this image"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleFavoriteImage();
+                    }}
+                    className="absolute bottom-4 right-4 p-2 bg-blue-600 rounded-full hover:bg-blue-700 transition-colors"
                   >
-                    <FiHeart size={20} />
+                    <FiHeart className="text-white" size={20} />
                   </button>
+                )}
+                {/* Heart icon overlay - initially hidden, appears on hover/focus */}
+                <div className="absolute top-2 right-2 p-1.5 bg-black/50 rounded-full opacity-0 group-hover:opacity-100 group-focus:opacity-100 transition-opacity">
+                  <FiHeart className="w-5 h-5 text-white" />
                 </div>
-              </div>
-            ))
-          ) : (
-            <div className="col-span-full flex items-center justify-center h-64 text-gray-500 bg-[#1f2328] border border-gray-700 rounded-2xl">
-              No images found for this card.
-            </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
-
-      {/* Removed Arrow Buttons and Swipe Hint */} 
-
     </div>
   );
 };

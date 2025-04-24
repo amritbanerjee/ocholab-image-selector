@@ -244,8 +244,8 @@ const HomePage = ({ supabase, session }) => {
   const paginatedDecks = reviewDecks.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   // Handle deck click (navigate to image selection)
-  const handleDeckClick = (deckId, deckTitle) => {
-    navigate(`/deck/${deckId}/images`, { state: { deckName: deckTitle } });
+  const handleDeckClick = (deckId, deckTitle, deckDescription) => {
+    navigate(`/deck/${deckId}/images`, { state: { deckName: deckTitle, deckDescription: deckDescription } });
   };
 
   // Prepare data for the Pie chart
@@ -377,7 +377,7 @@ const HomePage = ({ supabase, session }) => {
                              <tr
                                key={deck.id}
                                className="border-b border-gray-700 hover:bg-[#2a2e34] cursor-pointer"
-                               onClick={() => handleDeckClick(deck.id, deck.title)}
+                               onClick={() => handleDeckClick(deck.id, deck.title, deck.description)}
                              >
                                <td className="px-4 py-3 font-medium text-white whitespace-nowrap flex items-center space-x-2">
                                  <img src={deck.avatar} alt="Deck Avatar" className="w-6 h-6 rounded-full" />

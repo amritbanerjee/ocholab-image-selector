@@ -55,7 +55,8 @@ useEffect(() => {
               const originalKey = card?.decks?.title_key;
               return {
                 id: deckId,
-                title: originalKey ? translationMap?.[originalKey] || `Deck ${deckId}` : `Deck ${deckId}`
+                title: originalKey ? translationMap?.[originalKey] || `Deck ${deckId}` : `Deck ${deckId}`,
+                description: originalKey ? translationMap?.[originalKey] || `Deck ${deckId}` : `Deck ${deckId}`
               };
             });
 
@@ -70,8 +71,8 @@ useEffect(() => {
   fetchDecks();
 }, [supabase]);
 
-  const handleDeckClick = (deckId, deckTitle) => {
-    navigate(`/deck/${deckId}/images`, { state: { deckName: deckTitle } })
+  const handleDeckClick = (deckId, deckTitle, deckDescription) => {
+    navigate(`/deck/${deckId}/images`, { state: { deckName: deckTitle, deckDescription: deckDescription } })
   }
 
   if (loading) {
@@ -99,7 +100,7 @@ return (
       {decks.map((deck) => (
         <button
           key={deck.id}
-          onClick={() => handleDeckClick(deck.id, deck.title)}
+          onClick={() => handleDeckClick(deck.id, deck.title, deck.description)}
           className="p-6 bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow"
         >
           <h2 className="text-xl font-semibold mb-2">{deck.title}</h2>
