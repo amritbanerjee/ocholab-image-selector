@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useLocation } from 'react-router-dom';
-// import { useSwipeable } from 'react-swipeable'; // Remove swipe handlers
+import { useSwipeable } from 'react-swipeable'; // Add swipe handlers
 import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui/card'; // Import Card components
 import { FiHeart, FiArrowLeft, FiArrowRight } from 'react-icons/fi'; // Import icons
 import './ImageSelectorPage.css'; // Import CSS for animations
@@ -13,6 +13,14 @@ const ImageSelectorPage = ({ supabase, session }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedImage, setSelectedImage] = useState(null);
+  
+  // Swipe handlers
+  const swipeHandlers = useSwipeable({
+    onSwipedLeft: () => handleNext(),
+    onSwipedRight: () => handlePrevious(),
+    preventDefaultTouchmoveEvent: true,
+    trackMouse: true
+  });
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -77,13 +85,46 @@ const ImageSelectorPage = ({ supabase, session }) => {
             assetData = {};
           }
 
-          const images = Object.entries(assetData)
-            .filter(([key, url]) => url && typeof url === 'string' && key !== 'selected') // Exclude 'selected' key if present
+          // Check for existing baseimage and rejected images
+          const hasBaseImage = assetData.baseimage && typeof assetData.baseimage === 'string';
+          const rejectedImages = Object.entries(assetData)
+            .filter(([key, url]) => 
+              url && typeof url === 'string' && 
+              key.startsWith('rejectedbasimage') && 
+              key !== 'selected'
+            )
             .map(([key, url]) => ({
               id: key,
               url,
-              title: key
+              title: key,
+              isRejected: true
             }));
+
+          const images = Object.entries(assetData)
+            .filter(([key, url]) => 
+              url && typeof url === 'string' && 
+              !key.startsWith('rejectedbasimage') && 
+              key !== 'selected' && 
+              key !== 'baseimage'
+            )
+            .map(([key, url]) => ({
+              id: key,
+              url,
+              title: key,
+              isBaseImage: hasBaseImage && key === 'baseimage'
+            }));
+
+          // Combine all images with baseimage first if exists
+          const allImages = [];
+          if (hasBaseImage) {
+            allImages.push({
+              id: 'baseimage',
+              url: assetData.baseimage,
+              title: 'baseimage',
+              isBaseImage: true
+            });
+          }
+          allImages.push(...images, ...rejectedImages);
 
           return {
             ...card,
@@ -108,7 +149,7 @@ const ImageSelectorPage = ({ supabase, session }) => {
   }, [supabase, deckId]);
 
   const handleImageSelect = (image) => {
-    if (!cards[currentIndex]) return;
+    if (!cards[currentIndex] || image.isRejected || image.isBaseImage) return;
     setSelectedImage(image);
 };
 
@@ -138,14 +179,45 @@ const handleNext = () => {
 //   />
 // );
 
+const CardCounter = () => (
+  <div className="flex items-center justify-center mx-4 text-gray-600 font-medium">
+    {cards.length > 0 ? `${currentIndex + 1} of ${cards.length}` : '0 of 0'}
+  </div>
+);
+
 const pulseAnimation = {
-  '0%': { transform: 'scale(1)', color: 'white' },
+  '0%': { transform: 'scale(1)', color: 'red' },
   '50%': { transform: 'scale(1.3)', color: 'red' },
-  '100%': { transform: 'scale(1)', color: 'white' }
+  '100%': { transform: 'scale(1)', color: 'red' }
+};
+
+const renderImage = (image) => {
+  const style = image.isBaseImage ? baseImageStyle : 
+                image.isRejected ? rejectedImageStyle : 
+                selectedImage?.id === image.id ? selectedImageStyle : '';
+  
+  return (
+    <div key={image.id} className={`relative rounded-lg overflow-hidden ${style}`}>
+      <img 
+        src={image.url} 
+        alt={image.title} 
+        className="w-full h-full object-cover"
+        onClick={() => handleImageSelect(image)}
+      />
+      {(image.isBaseImage || selectedImage?.id === image.id) && (
+        <div className={heartStyle}>
+          <FiHeart className="fill-current" size={24} />
+        </div>
+      )}
+    </div>
+  );
 };
 
 // Define styles for selected image
-const selectedImageStyle = "border-4 border-blue-500 ring-2 ring-blue-300 scale-105 transition-transform duration-200 ease-in-out";
+const selectedImageStyle = "border-4 border-blue-500 ring-2 ring-blue-300 scale-110 transition-transform duration-200 ease-in-out";
+const heartStyle = "absolute top-2 right-2 text-red-500 z-10";
+const baseImageStyle = "border-4 border-green-500 ring-2 ring-green-300";
+const rejectedImageStyle = "opacity-50 border-4 border-red-500 ring-2 ring-red-300";
 
 const handleConfirmSelection = async () => {
     if (!selectedImage || !cards[currentIndex]) return;
@@ -177,14 +249,11 @@ const handleConfirmSelection = async () => {
         baseimage: selectedImage.url,
       };
 
-      // Add rejected images dynamically
-      let rejectedIndex = 1;
-      currentCard.images.forEach(img => {
-        if (img.id !== selectedImage.id) {
-          const key = `rejectedbasimage${String(rejectedIndex).padStart(2, '0')}`;
-          updatedAssetData[key] = img.url;
-          rejectedIndex++;
-        }
+      // Add rejected images dynamically by excluding the selected image
+      const rejectedImages = currentCard.images.filter(img => img.id !== selectedImage.id);
+      rejectedImages.forEach((img, index) => {
+        const key = `rejectedbasimage${String(index + 1).padStart(2, '0')}`;
+        updatedAssetData[key] = img.url;
       });
 
       // Filter out null/undefined values before stringifying (optional, but good practice)
@@ -254,7 +323,7 @@ const handleConfirmSelection = async () => {
 
   // --- Render Logic --- 
   return (
-    <div className="image-selector-container p-4">
+    <div className="image-selector-container p-4" {...swipeHandlers}>
       {/* Container for Deck and Card Details */}
       <div className="flex w-full justify-between space-x-4 mb-4">
         <div className="flex-1">
@@ -297,13 +366,11 @@ const handleConfirmSelection = async () => {
                 <img
                   src={image.url}
                   alt={image.title || `Image ${image.id}`}
-                  className="object-cover w-full h-full shadow-md group-hover:opacity-80 transition-opacity"
+                  className="object-cover w-full h-full shadow-md group-hover:opacity-80 transition-opacity relative"
                 />
                 {/* Add overlay/icon for selected state */}
                 {selectedImage?.id === image.id && (
-                  <div className="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center transition-opacity duration-200">
-                    <FiHeart className="text-white text-4xl opacity-90" />
-                  </div>
+                  <FiHeart className={`animate-pulse ${heartStyle}`} style={{...pulseAnimation}} size={48} />
                 )}
               </div>
             ))}
@@ -319,6 +386,7 @@ const handleConfirmSelection = async () => {
             >
               <FiArrowLeft size={24} />
             </button>
+            <CardCounter />
             <button
               onClick={handleNext}
               disabled={currentIndex >= cards.length - 1}
@@ -330,19 +398,19 @@ const handleConfirmSelection = async () => {
 
           {/* Add Confirm/Cancel Buttons conditionally */}
           {selectedImage && (
-            <div className="mt-6 flex justify-center space-x-4">
+            <div className="mt-6 flex justify-center space-x-4 fixed bottom-8 left-0 right-0 z-50 animate-fade-in">
               <button 
                 id="confirm-selection-button"
                 onClick={handleConfirmSelection} 
-                className="px-6 py-2 bg-green-500 text-white rounded hover:bg-green-600 flex items-center space-x-2 transition-colors disabled:opacity-50"
+                className="px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 flex items-center space-x-2 transition-all duration-300 shadow-lg disabled:opacity-50"
                 disabled={loading}
               >
-                <FiHeart />
-                <span>{loading ? 'Confirming...' : 'Confirm Selection'}</span>
+                <FiHeart className="animate-pulse" />
+                <span className="font-medium">{loading ? 'Confirming...' : 'Confirm Selection'}</span>
               </button>
               <button 
                 onClick={handleDeselectImage} 
-                className="px-6 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400 transition-colors disabled:opacity-50"
+                className="px-6 py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-all duration-300 shadow-lg disabled:opacity-50"
                 disabled={loading}
               >
                 Cancel

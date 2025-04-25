@@ -335,7 +335,7 @@ const HomePage = ({ supabase, session }) => {
                      <div className="w-6 h-6 bg-gray-700 rounded flex items-center justify-center">
                        <FiSettings size={14} className="text-gray-400"/>
                      </div>
-                     <span className="text-sm text-gray-400">We protect your personal information.</span>
+                     <span className="text-sm text-gray-400">Every Card at Ocho goes through Human inspection!.</span>
                      <a href="#" className="text-sm text-blue-500 hover:underline">Privacy Policy</a>
                   </div>
                   <div className="flex items-center space-x-2">
