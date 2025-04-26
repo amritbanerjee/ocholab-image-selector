@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, useLocation } from 'react-router-dom';
+import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import { useSwipeable } from 'react-swipeable'; // Add swipe handlers
 import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui/card'; // Import Card components
 import { FiHeart, FiArrowLeft, FiArrowRight } from 'react-icons/fi'; // Import icons
@@ -13,6 +13,58 @@ const DeckImageSelector = ({ supabase, session }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedImage, setSelectedImage] = useState(null);
+  
+  const handleRejectTopic = async (deckId) => {
+    try {
+      const { error } = await supabase
+        .from('decks')
+        .update({ 
+          status: 'rejected',
+          self_image_status: 'rejected'
+        })
+        .eq('id', deckId);
+      
+      if (error) throw error;
+      // Refresh deck list after update
+      fetchDecks();
+    } catch (err) {
+      console.error('Error rejecting topic:', err);
+    }
+  };
+  
+  const handleRecreatePromptAndImage = async (deckId) => {
+    try {
+      const { error } = await supabase
+        .from('decks')
+        .update({ 
+          self_image_status: 'recreate_prompt'
+        })
+        .eq('id', deckId);
+      
+      if (error) throw error;
+      // Refresh deck list after update
+      fetchDecks();
+    } catch (err) {
+      console.error('Error recreating prompt and image:', err);
+    }
+  };
+  
+  const handleRecreateImage = async (deckId) => {
+    try {
+      const { error } = await supabase
+        .from('decks')
+        .update({ 
+          self_image_status: 'recreate_image'
+        })
+        .eq('id', deckId);
+      
+      if (error) throw error;
+      // Refresh deck list after update
+      fetchDecks();
+    } catch (err) {
+      console.error('Error recreating image:', err);
+    }
+  };
   
   // Ensure we always have 4 images to display
   const getImagesToDisplay = (images) => {
@@ -50,6 +102,15 @@ const DeckImageSelector = ({ supabase, session }) => {
   }, []);
   const { deckId } = useParams();
   const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+  const urlIndex = parseInt(searchParams.get('index')) || 0;
+  
+  useEffect(() => {
+    if (urlIndex !== currentIndex) {
+      setCurrentIndex(urlIndex);
+    }
+  }, [urlIndex]);
+  
   const deckName = cards[currentIndex]?.cardName || `Deck ID: ${deckId}`;
   const deckDescription = cards[currentIndex]?.cardDescription || '';
   console.log('Navigation state:', location.state); // Debug log to verify state
@@ -174,23 +235,52 @@ const handleDeselectImage = () => {
     setSelectedImage(null);
 };
 
+const navigate = useNavigate();
+
 const handlePrevious = () => {
     if (currentIndex > 0) {
-        setCurrentIndex(currentIndex - 1);
+        const newIndex = currentIndex - 1;
+        setCurrentIndex(newIndex);
         setSelectedImage(null); // Deselect image when changing card
+        navigate(`/deck/${deckId}/deckimages?index=${newIndex}`, { replace: true });
     }
 };
 
 const handleNext = () => {
     if (currentIndex < cards.length - 1) {
-        setCurrentIndex(currentIndex + 1);
+        const newIndex = currentIndex + 1;
+        setCurrentIndex(newIndex);
         setSelectedImage(null); // Deselect image when changing card
+        navigate(`/deck/${deckId}/deckimages?index=${newIndex}`, { replace: true });
     }
 };
 
 const CardCounter = () => (
   <div className="flex items-center justify-center mx-4 text-gray-600 font-medium">
     {cards.length > 0 ? `${currentIndex + 1} of ${cards.length}` : '0 of 0'}
+  </div>
+);
+
+const ActionButtons = ({ deckId }) => (
+  <div className="flex space-x-2 ml-4">
+    <button 
+      onClick={() => handleRejectTopic(deckId)}
+      className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition-colors"
+    >
+      Reject Topic
+    </button>
+    <button 
+      onClick={() => handleRecreatePromptAndImage(deckId)}
+      className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+    >
+      Recreate Prompt & Image
+    </button>
+    <button 
+      onClick={() => handleRecreateImage(deckId)}
+      className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 transition-colors"
+    >
+      Recreate Image
+    </button>
   </div>
 );
 
@@ -239,9 +329,19 @@ return (
       </div>
     ) : cards.length > 0 ? (
       <div {...swipeHandlers} className="flex flex-col h-full">
-        <div className="flex justify-between items-start mb-4">
-          <DeckDetails deckName={deckName} deckDescription={deckDescription} />
-          <div className="flex items-center">
+        <div className="flex justify-between items-center pl-0 pr-4 py-4">
+          <div className="w-1/2">
+  <DeckDetails deckName={deckName} deckDescription={deckDescription} />
+</div>
+          {cards.length > 0 && <ActionButtons deckId={cards[currentIndex].id} />}
+        </div>
+        
+        
+        <div className="flex-1 grid grid-cols-1 gap-4">
+          <div className="flex overflow-x-auto space-x-4 pb-4">
+            {cards[currentIndex].images.map(renderImage)}
+          </div>
+          <div className="flex items-center justify-center mt-4">
             <button 
               onClick={handlePrevious}
               disabled={currentIndex === 0}
@@ -257,12 +357,6 @@ return (
             >
               <FiArrowRight />
             </button>
-          </div>
-        </div>
-        
-        <div className="flex-1 grid grid-cols-1 gap-4">
-          <div className="flex overflow-x-auto space-x-4 pb-4">
-            {cards[currentIndex].images.map(renderImage)}
           </div>
         </div>
       </div>
