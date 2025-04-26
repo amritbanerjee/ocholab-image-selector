@@ -3,7 +3,7 @@ import { Card, CardHeader, CardTitle, CardDescription } from '../../../component
 
 const DeckDetails = ({ deckName, deckDescription }) => {
   return (
-    <Card className="mb-4 bg-[#1f2328] border border-gray-700 text-white shadow-md rounded-lg p-4">
+    <Card className="mb-4 bg-[#1f2328] border border-gray-700 text-white shadow-md rounded-lg p-4 w-full md:w-auto">
       <CardHeader className="p-0">
         <p className="text-xs uppercase text-gray-500 mb-2">Deck info</p>
         <CardTitle className="text-lg font-semibold mb-1">{deckName}</CardTitle>

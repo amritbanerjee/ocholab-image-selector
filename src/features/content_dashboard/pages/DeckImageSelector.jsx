@@ -329,16 +329,16 @@ return (
       </div>
     ) : cards.length > 0 ? (
       <div {...swipeHandlers} className="flex flex-col h-full">
-        <div className="flex justify-between items-center pl-0 pr-4 py-4">
-          <div className="w-1/2">
-  <DeckDetails deckName={deckName} deckDescription={deckDescription} />
-</div>
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center pl-0 pr-4 py-4 gap-4 md:gap-0">
+          <div className="w-full md:w-1/2">
+            <DeckDetails deckName={deckName} deckDescription={deckDescription} />
+          </div>
           {cards.length > 0 && <ActionButtons deckId={cards[currentIndex].id} />}
         </div>
         
         
         <div className="flex-1 grid grid-cols-1 gap-4">
-          <div className="flex overflow-x-auto space-x-4 pb-4">
+          <div className="grid grid-cols-2 gap-4 md:flex md:overflow-x-auto md:space-x-4 pb-4">
             {cards[currentIndex].images.map(renderImage)}
           </div>
           <div className="flex items-center justify-center mt-4">
