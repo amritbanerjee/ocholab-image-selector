@@ -14,6 +14,20 @@ const DeckImageSelector = ({ supabase, session }) => {
   const [error, setError] = useState(null);
   const [selectedImage, setSelectedImage] = useState(null);
   
+  // Ensure we always have 4 images to display
+  const getImagesToDisplay = (images) => {
+    const displayImages = [...images];
+    while (displayImages.length < 4) {
+      displayImages.push({
+        id: `placeholder-${displayImages.length}`,
+        url: null,
+        title: 'Image not found',
+        isPlaceholder: true
+      });
+    }
+    return displayImages.slice(0, 4);
+  };
+  
   // Swipe handlers
   const swipeHandlers = useSwipeable({
     onSwipedLeft: () => handleNext(),
@@ -36,30 +50,29 @@ const DeckImageSelector = ({ supabase, session }) => {
   }, []);
   const { deckId } = useParams();
   const location = useLocation();
-  const deckName = location.state?.deckName || `Deck ID: ${deckId}`;
-  const deckDescription = location.state?.deckDescription || '';
+  const deckName = cards[currentIndex]?.cardName || `Deck ID: ${deckId}`;
+  const deckDescription = cards[currentIndex]?.cardDescription || '';
   console.log('Navigation state:', location.state); // Debug log to verify state
 
   useEffect(() => {
-    const fetchCards = async () => {
+    const fetchDecks = async () => {
       setLoading(true);
       setError(null);
       try {
-        const { data: cardData, error: cardError } = await supabase
-          .from('cards')
-          .select('id, title_key, description_key, asset_url, deck_id, status')
-          .or('status.eq.choosebaseimage,status.eq.imagecreated')
-          .eq('deck_id', deckId);
+        const { data: deckData, error: deckError } = await supabase
+          .from('decks')
+          .select('id, title_key, description_key, asset_url, self_image_status')
+          .eq('self_image_status', 'image_created');
 
-        if (cardError) throw cardError;
-        if (!cardData || cardData.length === 0) {
+        if (deckError) throw deckError;
+        if (!deckData || deckData.length === 0) {
           setCards([]);
           setLoading(false);
           return;
         }
 
-        const titleKeys = cardData.map(card => card.title_key).filter(Boolean);
-        const descriptionKeys = cardData.map(card => card.description_key).filter(Boolean);
+        const titleKeys = deckData.map(deck => deck.title_key).filter(Boolean);
+        const descriptionKeys = deckData.map(deck => deck.description_key).filter(Boolean);
         let translationMap = {};
         
         // Fetch translations for both title and description keys
@@ -76,18 +89,18 @@ const DeckImageSelector = ({ supabase, session }) => {
           }, {});
         }
 
-        const cardsWithImages = cardData.map(card => {
+        const decksWithImages = deckData.map(deck => {
           let assetData = {};
           try {
-            assetData = typeof card.asset_url === 'string' ? JSON.parse(card.asset_url) : (card.asset_url || {});
+            assetData = typeof deck.asset_url === 'string' ? JSON.parse(deck.asset_url) : (deck.asset_url || {});
           } catch (parseError) {
-            console.error('Error parsing asset_url:', parseError, card.asset_url);
+            console.error('Error parsing asset_url:', parseError, deck.asset_url);
             assetData = {};
           }
 
           // Check for existing baseimage and rejected images
           const hasBaseImage = assetData.baseimage && typeof assetData.baseimage === 'string';
-          const isImageCreated = card.status === 'imagecreated';
+          const isImageCreated = deck.status === 'imagecreated';
           const rejectedImages = Object.entries(assetData)
             .filter(([key, url]) => 
               url && typeof url === 'string' && 
@@ -133,14 +146,14 @@ const DeckImageSelector = ({ supabase, session }) => {
           })), ...rejectedImages);
 
           return {
-            ...card,
+            ...deck,
             images: images,
-            cardName: card.title_key ? (translationMap[card.title_key] || `Key: ${card.title_key}`) : `ID: ${card.id}`,
-            cardDescription: card.description_key ? (translationMap[card.description_key] || `Key: ${card.description_key}`) : ''
+            cardName: deck.title_key ? (translationMap[deck.title_key] || `Key: ${deck.title_key}`) : `ID: ${deck.id}`,
+            cardDescription: deck.description_key ? (translationMap[deck.description_key] || `Key: ${deck.description_key}`) : ''
           };
         });
 
-        setCards(cardsWithImages);
+        setCards(decksWithImages);
       } catch (error) {
         console.error('Error fetching cards:', error);
         setError(error.message);
@@ -149,13 +162,11 @@ const DeckImageSelector = ({ supabase, session }) => {
       }
     };
 
-    if (deckId) {
-        fetchCards();
-    }
+    fetchDecks();
   }, [supabase, deckId]);
 
   const handleImageSelect = (image) => {
-    if (!cards[currentIndex] || image.isRejected || image.isBaseImage) return;
+    if (!decks[currentIndex] || image.isRejected || image.isBaseImage) return;
     setSelectedImage(image);
 };
 
@@ -187,24 +198,29 @@ const pulseAnimation = {
   '0%': { transform: 'scale(1)', color: 'red' },
   '50%': { transform: 'scale(1.3)', color: 'red' },
   '100%': { transform: 'scale(1)', color: 'red' }
+
 };
 
 const renderImage = (image) => {
   return (
-    <div key={image.id} className="relative">
-      <img 
-        src={image.url} 
-        alt={image.title}
-        className={`w-full h-auto rounded-lg ${image.isRejected ? 'opacity-50' : ''}`}
-      />
-      {!image.isRejected && !image.isBaseImage && (
-        <button 
-          onClick={() => handleImageSelect(image)}
-          className="absolute top-2 right-2 bg-white rounded-full p-1 shadow-md hover:bg-gray-100"
-        >
-          <FiHeart className="text-red-500" />
-        </button>
-      )}
+    <div key={image.id} className="relative h-full w-full">
+      {image.url ? (
+        <>
+          <img 
+            src={image.url} 
+            alt={image.title}
+            className={`w-full h-full object-cover rounded-lg ${image.isRejected ? 'opacity-50' : ''}`}
+          />
+          {!image.isRejected && !image.isBaseImage && (
+            <button 
+              onClick={() => handleImageSelect(image)}
+              className="absolute top-2 right-2 bg-white rounded-full p-1 shadow-md hover:bg-gray-100"
+            >
+              <FiHeart className="text-red-500" />
+            </button>
+          )}
+        </>
+      ) : null}
     </div>
   );
 };
@@ -222,27 +238,32 @@ return (
         </div>
       </div>
     ) : cards.length > 0 ? (
-      <div {...swipeHandlers}>
-        <div className="flex items-center justify-between mb-4">
-          <button 
-            onClick={handlePrevious}
-            disabled={currentIndex === 0}
-            className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 disabled:opacity-50"
-          >
-            <FiArrowLeft />
-          </button>
-          <CardCounter />
-          <button 
-            onClick={handleNext}
-            disabled={currentIndex === cards.length - 1}
-            className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 disabled:opacity-50"
-          >
-            <FiArrowRight />
-          </button>
+      <div {...swipeHandlers} className="flex flex-col h-full">
+        <div className="flex justify-between items-start mb-4">
+          <DeckDetails deckName={deckName} deckDescription={deckDescription} />
+          <div className="flex items-center">
+            <button 
+              onClick={handlePrevious}
+              disabled={currentIndex === 0}
+              className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 disabled:opacity-50"
+            >
+              <FiArrowLeft />
+            </button>
+            <CardCounter />
+            <button 
+              onClick={handleNext}
+              disabled={currentIndex === cards.length - 1}
+              className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 disabled:opacity-50"
+            >
+              <FiArrowRight />
+            </button>
+          </div>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {cards[currentIndex].images.map(renderImage)}
+        <div className="flex-1 grid grid-cols-1 gap-4">
+          <div className="flex overflow-x-auto space-x-4 pb-4">
+            {cards[currentIndex].images.map(renderImage)}
+          </div>
         </div>
       </div>
     ) : (
