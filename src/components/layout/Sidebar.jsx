@@ -3,8 +3,8 @@ import { Link } from 'react-router-dom'; // Import Link
 // Import FiHome, FiList, and other necessary icons
 import { FiGrid, FiBarChart2, FiCalendar, FiClock, FiSettings, FiHome, FiList, FiImage, FiLayers } from 'react-icons/fi';
 
-const Sidebar = () => (
-  <aside className="flex flex-col items-center bg-[#1a1d21] text-gray-400 w-20 py-6 space-y-6 min-h-screen shadow-lg">
+const Sidebar = ({ onClose }) => (
+  <aside className="flex flex-col items-center bg-[#1a1d21] text-gray-400 w-20 py-6 space-y-6 min-h-screen shadow-lg md:w-20">
     <div className="mb-8">
       {/* Placeholder Logo */}
       <svg width="32" height="32" fill="none" viewBox="0 0 24 24"><rect width="24" height="24" rx="6" fill="#3b82f6"/><path d="M7 8h10M7 12h10M7 16h6" stroke="#fff" strokeWidth="2" strokeLinecap="round"/></svg>
@@ -34,7 +34,10 @@ const Sidebar = () => (
     <div className="mt-auto flex flex-col items-center space-y-6">
        <button className="p-2 rounded-lg text-gray-400 hover:bg-gray-700 hover:text-white transition-colors"><FiSettings size={24} /></button>
       <button 
-        onClick={() => handleLogout()}
+        onClick={() => {
+          if (onClose) onClose();
+          handleLogout();
+        }}
         className="p-2 rounded-lg text-gray-400 hover:bg-gray-700 hover:text-white transition-colors"
         title="Logout"
       >
