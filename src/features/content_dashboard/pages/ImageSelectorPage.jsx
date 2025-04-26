@@ -47,8 +47,8 @@ const ImageSelectorPage = ({ supabase, session }) => {
       try {
         const { data: cardData, error: cardError } = await supabase
           .from('cards')
-          .select('id, title_key, description_key, asset_url, deck_id')
-          .eq('status', 'choosebaseimage')
+          .select('id, title_key, description_key, asset_url, deck_id, status')
+          .or('status.eq.choosebaseimage,status.eq.imagecreated')
           .eq('deck_id', deckId);
 
         if (cardError) throw cardError;
@@ -87,6 +87,7 @@ const ImageSelectorPage = ({ supabase, session }) => {
 
           // Check for existing baseimage and rejected images
           const hasBaseImage = assetData.baseimage && typeof assetData.baseimage === 'string';
+          const isImageCreated = card.status === 'imagecreated';
           const rejectedImages = Object.entries(assetData)
             .filter(([key, url]) => 
               url && typeof url === 'string' && 
@@ -97,7 +98,8 @@ const ImageSelectorPage = ({ supabase, session }) => {
               id: key,
               url,
               title: key,
-              isRejected: true
+              isRejected: true,
+              isImageCreated: isImageCreated
             }));
 
           const images = Object.entries(assetData)
@@ -121,10 +123,14 @@ const ImageSelectorPage = ({ supabase, session }) => {
               id: 'baseimage',
               url: assetData.baseimage,
               title: 'baseimage',
-              isBaseImage: true
+              isBaseImage: true,
+              isImageCreated: isImageCreated
             });
           }
-          allImages.push(...images, ...rejectedImages);
+          allImages.push(...images.map(img => ({
+            ...img,
+            isImageCreated: isImageCreated
+          })), ...rejectedImages);
 
           return {
             ...card,
@@ -198,6 +204,11 @@ const renderImage = (image) => {
   
   return (
     <div key={image.id} className={`relative rounded-lg overflow-hidden ${style}`}>
+      {image.isImageCreated && (
+        <div className="absolute top-2 right-2 z-10">
+          <FiHeart className="text-red-500 text-2xl" />
+        </div>
+      )}
       <img 
         src={image.url} 
         alt={image.title} 

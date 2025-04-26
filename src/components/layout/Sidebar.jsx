@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom'; // Import Link
 // Import FiHome, FiList, and other necessary icons
-import { FiGrid, FiBarChart2, FiCalendar, FiClock, FiSettings, FiHome, FiList } from 'react-icons/fi';
+import { FiGrid, FiBarChart2, FiCalendar, FiClock, FiSettings, FiHome, FiList, FiImage } from 'react-icons/fi';
 
 const Sidebar = () => (
   <aside className="flex flex-col items-center bg-[#1a1d21] text-gray-400 w-20 py-6 space-y-6 min-h-screen shadow-lg">
@@ -17,6 +17,9 @@ const Sidebar = () => (
       {/* Link to Deck List Page */}
       <Link to="/decks" className="p-2 rounded-lg text-gray-400 hover:bg-gray-700 hover:text-white transition-colors" title="Decks">
         <FiList size={24} />
+      </Link>
+      <Link to="/deck/images" className="p-2 rounded-lg text-gray-400 hover:bg-gray-700 hover:text-white transition-colors" title="Image Selector">
+        <FiImage size={24} />
       </Link>
       {/* Keep other icons as buttons or convert to Links if needed */}
       <button className="p-2 rounded-lg text-gray-400 hover:bg-gray-700 hover:text-white transition-colors"><FiGrid size={24} /></button>
