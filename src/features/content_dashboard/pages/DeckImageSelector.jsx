@@ -316,7 +316,7 @@ const renderImage = (image) => {
 };
 
 return (
-  <div className="container mx-auto px-4 py-8">
+  <div className="container mx-auto px-4 py-2">
     {loading ? (
       <div className="flex items-center justify-center min-h-screen">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
@@ -329,7 +329,7 @@ return (
       </div>
     ) : cards.length > 0 ? (
       <div {...swipeHandlers} className="flex flex-col h-full">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center pl-0 pr-4 py-4 gap-4 md:gap-0">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center pl-0 pr-4 py-2 gap-2 md:gap-0">
           <div className="w-full md:w-1/2">
             <DeckDetails deckName={deckName} deckDescription={deckDescription} />
           </div>
@@ -337,7 +337,7 @@ return (
         </div>
         
         
-        <div className="flex-1 grid grid-cols-1 gap-4">
+        <div className="flex-1 grid grid-cols-1 gap-2 mt-2">
           <div className="grid grid-cols-2 gap-4 md:flex md:overflow-x-auto md:space-x-4 pb-4">
             {cards[currentIndex].images.map(renderImage)}
           </div>
