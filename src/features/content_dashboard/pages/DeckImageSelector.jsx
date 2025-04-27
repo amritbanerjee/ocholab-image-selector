@@ -1,24 +1,39 @@
+// Import necessary React hooks and libraries
 import { useState, useEffect } from 'react';
+// Import routing utilities for navigation and URL parameters
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
-import { useSwipeable } from 'react-swipeable'; // Add swipe handlers
-import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui/card'; // Import Card components
-import { FiHeart, FiArrowLeft, FiArrowRight } from 'react-icons/fi'; // Import icons
-import './ImageSelectorPage.css'; // Import CSS for animations
-import DeckDetails from '../components/DeckDetails'; // Import DeckDetails
-import CardDetails from '../components/CardDetails'; // Import CardDetails
-import { LazyLoadWrapper } from '../../../utils/IntersectionObserver'; // Import LazyLoadWrapper
+// Import swipe handlers for touch/mouse swipe gestures
+import { useSwipeable } from 'react-swipeable';
+// Import UI components for card layout
+import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui/card';
+// Import icons for navigation buttons
+import { FiHeart, FiArrowLeft, FiArrowRight } from 'react-icons/fi';
+// Import CSS styles for animations
+import './ImageSelectorPage.css';
+// Import custom components for deck and card details
+import DeckDetails from '../components/DeckDetails';
+import CardDetails from '../components/CardDetails';
+// Import lazy loading wrapper for images
+import { LazyLoadWrapper } from '../../../utils/IntersectionObserver';
+// Import cache service for storing fetched data
 import CacheService from '../../../services/cacheService';
 
+// Main component for deck image selection
 const DeckImageSelector = ({ supabase, session }) => {
+  // Initialize cache service with Supabase client
   const cacheService = new CacheService(supabase);
-  const [cards, setCards] = useState([]);
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [selectedImage, setSelectedImage] = useState(null);
   
+  // State management:
+  const [cards, setCards] = useState([]); // Stores deck/card data
+  const [currentIndex, setCurrentIndex] = useState(0); // Current card index
+  const [loading, setLoading] = useState(true); // Loading state
+  const [error, setError] = useState(null); // Error state
+  const [selectedImage, setSelectedImage] = useState(null); // Currently selected image
+  
+  // Handler for rejecting a deck topic
   const handleRejectTopic = async (deckId) => {
     try {
+      // Update deck status to 'rejected' in Supabase
       const { error } = await supabase
         .from('decks')
         .update({ 
@@ -35,8 +50,10 @@ const DeckImageSelector = ({ supabase, session }) => {
     }
   };
   
+  // Handler for recreating both prompt and image for a deck
   const handleRecreatePromptAndImage = async (deckId) => {
     try {
+      // Update deck status to trigger prompt recreation
       const { error } = await supabase
         .from('decks')
         .update({ 
@@ -52,8 +69,10 @@ const DeckImageSelector = ({ supabase, session }) => {
     }
   };
   
+  // Handler for recreating just the image for a deck
   const handleRecreateImage = async (deckId) => {
     try {
+      // Update deck status to trigger image recreation
       const { error } = await supabase
         .from('decks')
         .update({ 
@@ -69,7 +88,8 @@ const DeckImageSelector = ({ supabase, session }) => {
     }
   };
   
-  // Ensure we always have 4 images to display
+  // Utility function to ensure we always have 4 images to display
+  // Adds placeholder images if there are fewer than 4
   const getImagesToDisplay = (images) => {
     const displayImages = [...images];
     while (displayImages.length < 4) {
@@ -83,12 +103,13 @@ const DeckImageSelector = ({ supabase, session }) => {
     return displayImages.slice(0, 4);
   };
   
-  // Swipe handlers
+  // Configure swipe handlers for touch/mouse gestures
+  // Maps swipe directions to navigation functions
   const swipeHandlers = useSwipeable({
-    onSwipedLeft: () => handleNext(),
-    onSwipedRight: () => handlePrevious(),
-    preventDefaultTouchmoveEvent: true,
-    trackMouse: true
+    onSwipedLeft: () => handleNext(), // Right swipe goes to next card
+    onSwipedRight: () => handlePrevious(), // Left swipe goes to previous card
+    preventDefaultTouchmoveEvent: true, // Prevent default browser behavior
+    trackMouse: true // Enable mouse drag support
   });
 
   useEffect(() => {
@@ -339,7 +360,7 @@ const ActionButtons = ({ deckId }) => (
       onClick={() => handleRecreatePromptAndImage(deckId)}
       className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
     >
-      Recreate Prompt & Image
+      Recreate Prompt
     </button>
     <button 
       onClick={() => handleRecreateImage(deckId)}
