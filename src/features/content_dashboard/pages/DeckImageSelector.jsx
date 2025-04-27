@@ -6,8 +6,11 @@ import { FiHeart, FiArrowLeft, FiArrowRight } from 'react-icons/fi'; // Import i
 import './ImageSelectorPage.css'; // Import CSS for animations
 import DeckDetails from '../components/DeckDetails'; // Import DeckDetails
 import CardDetails from '../components/CardDetails'; // Import CardDetails
+import { LazyLoadWrapper } from '../../../utils/IntersectionObserver'; // Import LazyLoadWrapper
+import CacheService from '../../../services/cacheService';
 
 const DeckImageSelector = ({ supabase, session }) => {
+  const cacheService = new CacheService(supabase);
   const [cards, setCards] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -120,6 +123,16 @@ const DeckImageSelector = ({ supabase, session }) => {
       setLoading(true);
       setError(null);
       try {
+        const cacheKey = `decks:${session?.user?.id}`;
+        const cachedData = await cacheService.get(cacheKey);
+        
+        if (cachedData) {
+          setCards(cachedData);
+          setLoading(false);
+          return;
+        }
+        
+        // First fetch deck data without translations
         const { data: deckData, error: deckError } = await supabase
           .from('decks')
           .select('id, title_key, description_key, asset_url, self_image_status')
@@ -132,22 +145,33 @@ const DeckImageSelector = ({ supabase, session }) => {
           return;
         }
 
+        // Separate title and description keys for optimized fetching
         const titleKeys = deckData.map(deck => deck.title_key).filter(Boolean);
         const descriptionKeys = deckData.map(deck => deck.description_key).filter(Boolean);
         let translationMap = {};
         
-        // Fetch translations for both title and description keys
-        const allKeys = [...titleKeys, ...descriptionKeys].filter(Boolean);
-        if (allKeys.length > 0) {
-          const { data: translations, error: translationsError } = await supabase
+        // Fetch title translations first
+        if (titleKeys.length > 0) {
+          const { data: titleTranslations, error: titleError } = await supabase
             .from('translations_en')
             .select('key, value')
-            .in('key', allKeys);
-          if (translationsError) throw translationsError;
-          translationMap = translations.reduce((acc, item) => {
-            acc[item.key] = item.value;
-            return acc;
-          }, {});
+            .in('key', titleKeys);
+          if (titleError) throw titleError;
+          titleTranslations?.forEach(item => {
+            translationMap[item.key] = item.value;
+          });
+        }
+        
+        // Then fetch description translations
+        if (descriptionKeys.length > 0) {
+          const { data: descTranslations, error: descError } = await supabase
+            .from('translations_en')
+            .select('key, value')
+            .in('key', descriptionKeys);
+          if (descError) throw descError;
+          descTranslations?.forEach(item => {
+            translationMap[item.key] = item.value;
+          });
         }
 
         const decksWithImages = deckData.map(deck => {
@@ -215,6 +239,7 @@ const DeckImageSelector = ({ supabase, session }) => {
         });
 
         setCards(decksWithImages);
+        await cacheService.set(cacheKey, decksWithImages);
       } catch (error) {
         console.error('Error fetching cards:', error);
         setError(error.message);
@@ -339,7 +364,11 @@ return (
         
         <div className="flex-1 grid grid-cols-1 gap-2 mt-2">
           <div className="grid grid-cols-2 gap-4 md:flex md:overflow-x-auto md:space-x-4 pb-4">
-            {cards[currentIndex].images.map(renderImage)}
+            {cards[currentIndex].images.map((image) => (
+            <LazyLoadWrapper key={image.id} rootMargin="200px" threshold={0.1}>
+              {renderImage(image)}
+            </LazyLoadWrapper>
+          ))}
           </div>
           <div className="flex items-center justify-center mt-4">
             <button 

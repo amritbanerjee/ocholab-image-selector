@@ -6,6 +6,7 @@ import ProtectedRoute from './components/ProtectedRoute'
 import ImageSelectorPage from './features/content_dashboard/pages/ImageSelectorPage'; // Updated path with extension
 import DeckListPage from './features/content_dashboard/pages/DeckListPage'; // Corrected path to actual filename
 import DeckImageSelector from './features/content_dashboard/pages/DeckImageSelector';
+import ErrorBoundary from './components/ErrorBoundary';
 // import Navbar from './components/layout/Navbar' // Removed, layout handles navigation
 import HomePage from './features/content_dashboard/pages/HomePage'; // Updated path
 import MainLayout from './components/layout/MainLayout'; // Import the new layout
@@ -58,7 +59,11 @@ function App() {
           <Route path="/home" element={<HomePage supabase={supabase} session={session} />} />
           <Route path="/decks" element={<DeckListPage supabase={supabase} session={session} />} />
           <Route path="/deck/:deckId/images" element={<ImageSelectorPage supabase={supabase} session={session} />} />
-          <Route path="/deck/:deckId/deckimages" element={<DeckImageSelector supabase={supabase} session={session} />} />
+          <Route path="/deck/:deckId/deckimages" element={
+  <ErrorBoundary>
+    <DeckImageSelector supabase={supabase} session={session} />
+  </ErrorBoundary>
+} />
           {/* Add other protected routes here as children of MainLayout */}
         </Route>
       </Routes>
