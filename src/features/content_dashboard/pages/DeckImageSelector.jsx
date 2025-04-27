@@ -251,9 +251,44 @@ const DeckImageSelector = ({ supabase, session }) => {
     fetchDecks();
   }, [supabase, deckId]);
 
-  const handleImageSelect = (image) => {
-    if (!decks[currentIndex] || image.isRejected || image.isBaseImage) return;
+  const handleImageSelect = async (image) => {
+    if (!cards[currentIndex] || image.isRejected || image.isBaseImage) return;
+    
     setSelectedImage(image);
+    
+    try {
+      const currentDeck = cards[currentIndex];
+      let assetData = typeof currentDeck.asset_url === 'string' 
+        ? JSON.parse(currentDeck.asset_url) 
+        : (currentDeck.asset_url || {});
+      
+      // Create updated asset data with new baseimage while preserving existing images
+      const updatedAssetData = {
+        ...assetData,
+        baseimage: image.url
+      };
+      
+      const { error } = await supabase
+        .from('decks')
+        .update({
+          asset_url: updatedAssetData,
+          self_image_status: 'image_ready'
+        })
+        .eq('id', currentDeck.id);
+      
+      if (error) throw error;
+      
+      // Update local state
+      const updatedCards = [...cards];
+      updatedCards[currentIndex] = {
+        ...updatedCards[currentIndex],
+        asset_url: updatedAssetData
+      };
+      setCards(updatedCards);
+      
+    } catch (err) {
+      console.error('Error updating deck image:', err);
+    }
 };
 
 const handleDeselectImage = () => {
