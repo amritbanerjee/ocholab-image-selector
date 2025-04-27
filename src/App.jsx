@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import { supabase } from './lib/supabaseClient'
 import Login from './components/Login'
@@ -44,6 +44,8 @@ function App() {
     <Router basename="/ocholab-image-selector">
       <Routes>
         <Route path="/login" element={<Login supabase={supabase} />} />
+        {/* Root path redirects to login when no session exists */}
+        <Route path="/" element={session ? <Navigate to="/home" replace /> : <Navigate to="/login" replace />} />
         {/* Protected routes wrapped by MainLayout */}
         <Route 
           element={
@@ -53,7 +55,7 @@ function App() {
             </ProtectedRoute>
           }
         >
-          <Route path="/" element={<HomePage supabase={supabase} session={session} />} />
+          <Route path="/home" element={<HomePage supabase={supabase} session={session} />} />
           <Route path="/decks" element={<DeckListPage supabase={supabase} session={session} />} />
           <Route path="/deck/:deckId/images" element={<ImageSelectorPage supabase={supabase} session={session} />} />
           <Route path="/deck/:deckId/deckimages" element={<DeckImageSelector supabase={supabase} session={session} />} />
