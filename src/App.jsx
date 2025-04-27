@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
+import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import { supabase } from './lib/supabaseClient'
 import Login from './components/Login'
@@ -41,7 +41,7 @@ function App() {
   }
 
   return (
-    <Router basename="/ocholab-image-selector">
+    <Router>
       <Routes>
         <Route path="/login" element={<Login supabase={supabase} />} />
         {/* Root path redirects to login when no session exists */}
