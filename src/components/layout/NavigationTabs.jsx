@@ -19,7 +19,7 @@ const NavigationTabs = () => (
     </nav>
     
     {/* Mobile Bottom Navigation */}
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-[#1f2328] border-t border-gray-700 flex justify-around items-center py-2">
+    <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-[#1f2328] border-t border-gray-700 flex justify-center items-center py-2 space-x-8">
       <a href="#" className="flex flex-col items-center text-blue-500 text-xs">
         <FiHome size={20} />
         <span>Home</span>

@@ -7,7 +7,7 @@ import { useSwipeable } from 'react-swipeable';
 // Import UI components for card layout
 import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui/card';
 // Import icons for navigation buttons
-import { FiHeart, FiArrowLeft, FiArrowRight } from 'react-icons/fi';
+import { FiHeart, FiArrowLeft, FiArrowRight, FiXCircle, FiRefreshCw, FiImage } from 'react-icons/fi';
 // Import CSS styles for animations
 import './ImageSelectorPage.css';
 // Import custom components for deck and card details
@@ -349,24 +349,27 @@ const CardCounter = () => (
 );
 
 const ActionButtons = ({ deckId }) => (
-  <div className="flex space-x-2 ml-4">
+  <div className="flex space-x-4 ml-4">
     <button 
       onClick={() => handleRejectTopic(deckId)}
-      className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition-colors"
+      className="p-3 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors flex items-center justify-center"
+      title="Reject this deck topic and all its images"
     >
-      Reject Topic
+      <FiXCircle size={20} />
     </button>
     <button 
       onClick={() => handleRecreatePromptAndImage(deckId)}
-      className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+      className="p-3 bg-blue-500 text-white rounded-full hover:bg-blue-600 transition-colors flex items-center justify-center"
+      title="Regenerate both the prompt and image for this deck"
     >
-      Recreate Prompt
+      <FiRefreshCw size={20} />
     </button>
     <button 
       onClick={() => handleRecreateImage(deckId)}
-      className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 transition-colors"
+      className="p-3 bg-green-500 text-white rounded-full hover:bg-green-600 transition-colors flex items-center justify-center"
+      title="Regenerate just the image using the existing prompt"
     >
-      Recreate Image
+      <FiImage size={20} />
     </button>
   </div>
 );
