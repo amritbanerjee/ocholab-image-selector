@@ -1,5 +1,5 @@
 // Import necessary React hooks and libraries
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 // Import routing utilities for navigation and URL parameters
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
 // Import swipe handlers for touch/mouse swipe gestures
@@ -7,7 +7,7 @@ import { useSwipeable } from 'react-swipeable';
 // Import UI components for card layout
 import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui/card';
 // Import icons for navigation buttons
-import { FiHeart, FiArrowLeft, FiArrowRight, FiXCircle, FiRefreshCw, FiImage } from 'react-icons/fi';
+import { FiHeart, FiArrowLeft, FiArrowRight, FiXCircle, FiRefreshCw, FiImage, FiChevronLeft, FiChevronRight, FiCheckCircle } from 'react-icons/fi'; // Added FiCheckCircle
 // Import CSS styles for animations
 import './ImageSelectorPage.css';
 // Import custom components for deck and card details
@@ -124,6 +124,9 @@ const DeckImageSelector = ({ supabase, session }) => {
       window.removeEventListener('keydown', handleKeyDown);
     };
   }, []);
+
+  // REMOVED useEffect for Arrow Key navigation from here
+
   const { deckId } = useParams();
   const location = useLocation();
   const searchParams = new URLSearchParams(location.search);
@@ -204,56 +207,37 @@ const DeckImageSelector = ({ supabase, session }) => {
             assetData = {};
           }
 
-          // Check for existing baseimage and rejected images
-          const hasBaseImage = assetData.baseimage && typeof assetData.baseimage === 'string';
-          const isImageCreated = deck.status === 'imagecreated';
-          const rejectedImages = Object.entries(assetData)
-            .filter(([key, url]) => 
-              url && typeof url === 'string' && 
-              key.startsWith('rejectedbasimage') && 
-              key !== 'selected'
-            )
-            .map(([key, url]) => ({
-              id: key,
-              url,
-              title: key,
-              isRejected: true,
-              isImageCreated: isImageCreated
-            }));
+          // Store the base image URL separately
+          const baseimageUrl = (assetData.baseimage && typeof assetData.baseimage === 'string') ? assetData.baseimage : null;
+          const isImageCreated = deck.status === 'imagecreated'; // Assuming this status check is still relevant
+          
+          // Filter for standard image keys (e.g., image1, image2, etc.) - Adjust regex if keys differ
+          // Corrected regex to match baseimage01, baseimage02, baseimage03, baseimage04
+          const imageKeysRegex = /^baseimage0[1-4]$/; 
 
           const images = Object.entries(assetData)
             .filter(([key, url]) => 
               url && typeof url === 'string' && 
-              !key.startsWith('rejectedbasimage') && 
-              key !== 'selected' && 
-              key !== 'baseimage'
+              imageKeysRegex.test(key) // Only include standard image keys
             )
             .map(([key, url]) => ({
               id: key,
               url,
               title: key,
-              isBaseImage: hasBaseImage && key === 'baseimage'
-            }));
+              // Check if this image's URL matches the stored baseimage URL
+              isBaseImage: baseimageUrl === url, 
+              isImageCreated: isImageCreated // Keep this if needed
+            }))
+            // Optional: Sort images by key if order isn't guaranteed (e.g., image1, image2...)
+            .sort((a, b) => a.id.localeCompare(b.id, undefined, { numeric: true }));
 
-          // Combine all images with baseimage first if exists
-          const allImages = [];
-          if (hasBaseImage) {
-            allImages.push({
-              id: 'baseimage',
-              url: assetData.baseimage,
-              title: 'baseimage',
-              isBaseImage: true,
-              isImageCreated: isImageCreated
-            });
-          }
-          allImages.push(...images.map(img => ({
-            ...img,
-            isImageCreated: isImageCreated
-          })), ...rejectedImages);
+          // No need to manually prepend baseimage; it's now flagged within the 'images' array.
+          // const allImages = []; ... removed
 
           return {
             ...deck,
-            images: images,
+            // Pass the processed list (max 4 images, correctly flagged)
+            images: images, 
             cardName: deck.title_key ? (translationMap[deck.title_key] || `Key: ${deck.title_key}`) : `ID: ${deck.id}`,
             cardDescription: deck.description_key ? (translationMap[deck.description_key] || `Key: ${deck.description_key}`) : ''
           };
@@ -273,13 +257,29 @@ const DeckImageSelector = ({ supabase, session }) => {
   }, [supabase, deckId]);
 
   const handleImageSelect = (image) => {
-    if (!cards[currentIndex] || image.isRejected || image.isBaseImage) return;
+    // Prevent selection if conditions aren't met or if it's a placeholder
+    // Remove isRejected check
+    if (!cards[currentIndex] /*|| image.isRejected*/ || image.isBaseImage || image.isPlaceholder) return;
     
-    setSelectedImage({
-      ...image,
-      style: { transform: 'scale(1.15)' }
-    });
-};
+    // Determine the list of images that are valid for the modal
+    // Remove isRejected and isBaseImage filter here, only filter placeholders
+    const validImagesForModal = getImagesToDisplay(cards[currentIndex].images)
+                                .filter(img => !img.isPlaceholder /*&& !img.isRejected && !img.isBaseImage*/);
+
+    // Find the index of the clicked image within this valid list
+    const initialIndexInModal = validImagesForModal.findIndex(img => img.id === image.id);
+
+    // Only proceed if the image is actually in the list we'll send to the modal
+    if (initialIndexInModal >= 0) {
+      setSelectedImage({
+        image: image, // Store the initially clicked image object
+        initialIndex: initialIndexInModal // Store the index within the filtered list
+      });
+    } else {
+      // Log an error if the clicked image wasn't found in the valid list (shouldn't happen)
+      console.error("Clicked image not found in the list of valid images for the modal.");
+    }
+  };
 
 const handleDeselectImage = () => {
     setSelectedImage(null);
@@ -324,23 +324,44 @@ const handleConfirmSelection = async (image, cardId) => {
 
 const navigate = useNavigate();
 
-const handlePrevious = () => {
+// Wrap navigation handlers in useCallback
+const handlePrevious = useCallback(() => {
     if (currentIndex > 0) {
         const newIndex = currentIndex - 1;
         setCurrentIndex(newIndex);
         setSelectedImage(null); // Deselect image when changing card
         navigate(`/deck/${deckId}/deckimages?index=${newIndex}`, { replace: true });
     }
-};
+}, [currentIndex, navigate, deckId]); // Add dependencies
 
-const handleNext = () => {
+const handleNext = useCallback(() => {
     if (currentIndex < cards.length - 1) {
         const newIndex = currentIndex + 1;
         setCurrentIndex(newIndex);
         setSelectedImage(null); // Deselect image when changing card
         navigate(`/deck/${deckId}/deckimages?index=${newIndex}`, { replace: true });
     }
-};
+}, [currentIndex, cards.length, navigate, deckId]); // Add dependencies
+
+// MOVED useEffect for Arrow Key navigation here, AFTER handlePrevious/handleNext
+useEffect(() => {
+  const handleGridKeyDown = (e) => {
+    // Only navigate grid if modal is NOT open
+    if (!selectedImage) { 
+      if (e.key === 'ArrowLeft') {
+        handlePrevious();
+      } else if (e.key === 'ArrowRight') {
+        handleNext();
+      }
+    }
+  };
+
+  window.addEventListener('keydown', handleGridKeyDown);
+  return () => {
+    window.removeEventListener('keydown', handleGridKeyDown);
+  };
+  // Add dependencies: handlePrevious, handleNext, and selectedImage
+}, [handlePrevious, handleNext, selectedImage]); 
 
 const CardCounter = () => (
   <div className="flex items-center justify-center mx-4 text-gray-600 font-medium">
@@ -383,45 +404,192 @@ const pulseAnimation = {
 
 const renderImage = (image) => {
   const style = image.isBaseImage ? 'border-2 border-yellow-400' : 
-                image.isRejected ? 'opacity-50' : 
-                selectedImage?.id === image.id ? 'border-3 border-blue-500' : '';
+                /*image.isRejected ? 'opacity-50' :*/ 
+                selectedImage?.image?.id === image.id ? 'border-3 border-blue-500' : ''; // Corrected selectedImage check
   
   return (
-    <div key={image.id} className={`relative rounded-lg overflow-hidden ${style}`}>
+    <div key={image.id} className={`relative rounded-lg overflow-hidden ${style} aspect-[2/3]`}> {/* Added aspect ratio */} 
       <img 
         src={image.url} 
-        alt={image.title} 
-        className={`w-full h-full object-cover ${selectedImage?.id === image.id ? 'scale-110 transition-transform duration-300' : ''}`}
+        alt={image.title || 'Deck image'} // Added fallback alt text
+        className={`w-full h-full object-cover cursor-pointer hover:opacity-90 ${/*image.isRejected ||*/ image.isBaseImage || image.isPlaceholder ? 'cursor-not-allowed' : ''}`} // Add cursor style for non-selectable
         onClick={() => handleImageSelect(image)}
+        // Prevent drag ghost image
+        onDragStart={(e) => e.preventDefault()}
       />
-      {selectedImage?.id === image.id && (
-        <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-70 p-2 flex justify-center space-x-4">
-          <button 
-            className="px-4 py-1 bg-red-500 text-white rounded hover:bg-red-600"
-            onClick={(e) => {
-              e.stopPropagation();
-              handleDeselectImage();
-            }}
+      {/* Add Heart icon if it's the base image */}
+      {image.isBaseImage && (
+        <FiHeart 
+          className="absolute top-2 right-2 text-red-500 fill-current"
+          size={20}
+          title="Current Base Image"
+        />
+      )}
+    </div>
+  );
+};
+
+// Modify ImageModal to accept new props and manage internal state
+const ImageModal = ({ initialImage, initialIndex, images, onClose, onConfirm }) => {
+  // State to track the currently displayed image index within the modal
+  const [currentImageIndex, setCurrentImageIndex] = useState(initialIndex);
+  const modalRef = useRef(null); // Ref for the modal container for focus management
+  
+  // Get the image object based on the current index
+  const currentImage = images[currentImageIndex];
+  const totalImages = images.length;
+
+  // Basic check to prevent errors if images array is empty or index is out of bounds
+  if (!images || images.length === 0 || !currentImage) {
+    console.error("ImageModal: Invalid images array or index.", { initialIndex, images });
+    return null; // Don't render anything if data is invalid
+  }
+
+  // --- Navigation Logic (wrapped in useCallback for useEffect dependency) ---
+  const handleNextImage = useCallback(() => {
+    // Stop at the last image
+    setCurrentImageIndex((prevIndex) => 
+      prevIndex < totalImages - 1 ? prevIndex + 1 : prevIndex
+    );
+  }, [totalImages]); // Dependency: totalImages
+
+  const handlePreviousImage = useCallback(() => {
+    // Stop at the first image
+    setCurrentImageIndex((prevIndex) => 
+      prevIndex > 0 ? prevIndex - 1 : prevIndex
+    );
+  }, []); // No dependency needed as totalImages isn't used for the lower bound
+  // --- End Navigation Logic ---
+
+  // --- Keyboard Navigation ---
+  useEffect(() => {
+    const modalElement = modalRef.current;
+    if (!modalElement) return;
+
+    const handleKeyDown = (e) => {
+      e.stopPropagation(); // Prevent conflict with other listeners
+      if (e.key === 'ArrowRight') {
+        handleNextImage();
+      } else if (e.key === 'ArrowLeft') {
+        handlePreviousImage();
+      } else if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+
+    modalElement.addEventListener('keydown', handleKeyDown);
+    modalElement.focus(); // Focus the modal to capture key events
+
+    return () => {
+      if (modalElement) {
+        modalElement.removeEventListener('keydown', handleKeyDown);
+      }
+    };
+  }, [handleNextImage, handlePreviousImage, onClose]); // Dependencies
+  // --- End Keyboard Navigation ---
+
+  // --- Swipe Navigation ---
+  const swipeHandlers = useSwipeable({
+    onSwipedLeft: (eventData) => {
+      eventData.event.stopPropagation();
+      handleNextImage();
+    },
+    onSwipedRight: (eventData) => {
+      eventData.event.stopPropagation();
+      handlePreviousImage();
+    },
+    preventDefaultTouchmoveEvent: true,
+    trackMouse: true, 
+  });
+  // --- End Swipe Navigation ---
+
+  return (
+    // Add ref and tabIndex to make the outer div focusable
+    <div ref={modalRef} tabIndex="-1" className="fixed inset-0 z-50 flex flex-col items-center justify-center p-4 outline-none" aria-modal="true" role="dialog">
+      {/* Backdrop */}
+      <div 
+        className="fixed inset-0 bg-black/70 backdrop-blur-md transition-opacity"
+        onClick={onClose}
+      />
+      {/* Content Container (handles swipes) */}
+      <div {...swipeHandlers} className="relative z-10 w-full max-w-4xl flex flex-col items-center justify-center">
+        {/* Image Container with Navigation Arrows */}
+        <div className="relative w-full max-w-xl mb-4"> {/* Increased max-width from md to xl */} 
+          {/* Previous Button - Removed background, adjusted position/size */}
+          <button
+            onClick={handlePreviousImage}
+            className="absolute left-[-50px] top-1/2 -translate-y-1/2 z-20 text-white hover:text-gray-300 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+            aria-label="Previous image"
+            disabled={currentImageIndex <= 0} // Disable when at the first image
           >
-            Cancel
+            <FiChevronLeft size={40} /> {/* Increased size */} 
           </button>
-          <button 
-            className="px-4 py-1 bg-green-500 text-white rounded hover:bg-green-600"
-            onClick={(e) => {
-              e.stopPropagation();
-              handleConfirmSelection(image, cards[currentIndex].id)
-            }}
+
+          {/* Image - Removed inner black box, added rounded corners, increased max-height */}
+          <img 
+            src={currentImage.url} // Display image based on internal state
+            alt={currentImage.title} // Use alt from current image
+            className="w-full h-auto max-h-[80vh] object-contain rounded-2xl shadow-xl" // Increased rounding from rounded-lg to rounded-2xl
+          />
+
+          {/* Next Button - Removed background, adjusted position/size */}
+          <button
+            onClick={handleNextImage}
+            className="absolute right-[-50px] top-1/2 -translate-y-1/2 z-20 text-white hover:text-gray-300 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+            aria-label="Next image"
+            disabled={currentImageIndex >= totalImages - 1} // Disable when at the last image
           >
-            Confirm
+            <FiChevronRight size={40} /> {/* Increased size */} 
           </button>
         </div>
-      )}
+
+        {/* Action Buttons (Tinder Style) */}
+        <div className="flex justify-center space-x-10 mt-6"> {/* Increased spacing and margin-top */} 
+          {/* Cancel Button (Red Cross) */}
+          <button 
+            className="p-5 bg-white/10 hover:bg-white/20 text-red-500 rounded-full transition-colors shadow-lg"
+            onClick={onClose}
+            aria-label="Cancel"
+          >
+            <FiXCircle size={36} /> {/* Increased padding and icon size */} 
+          </button>
+          {/* Confirm Button (Green Tick) */}
+          <button 
+            className="p-5 bg-white/10 hover:bg-white/20 text-green-500 rounded-full transition-colors shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+            onClick={() => onConfirm(currentImage)} // Pass the currently displayed image
+            aria-label="Confirm Selection"
+            // Disable confirm if the current image is invalid for selection
+            disabled={currentImage.isPlaceholder || currentImage.isBaseImage}
+          >
+            <FiCheckCircle size={36} /> {/* Increased padding and icon size */} 
+          </button>
+        </div>
+      </div>
     </div>
   );
 };
 
 return (
   <div className="container mx-auto px-4 py-2">
+    {selectedImage && (() => {
+        // Prepare props for ImageModal
+        // Only filter placeholders now
+        const validImagesForModal = getImagesToDisplay(cards[currentIndex].images)
+                                    .filter(img => !img.isPlaceholder /*&& !img.isRejected && !img.isBaseImage*/);
+        const modalProps = {
+          initialImage: selectedImage.image, // Pass the initially clicked image object
+          initialIndex: selectedImage.initialIndex, // Pass the calculated index
+          images: validImagesForModal, // Pass the filtered list of images
+          onClose: handleDeselectImage,
+          // Pass the current image from the modal state to handleConfirmSelection
+          // This will be adjusted inside ImageModal later
+          onConfirm: (currentModalImage) => handleConfirmSelection(currentModalImage, cards[currentIndex]?.id) 
+        };
+
+        return (
+          <ImageModal {...modalProps} />
+        );
+      })()}
     {loading ? (
       <div className="flex items-center justify-center min-h-screen">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
