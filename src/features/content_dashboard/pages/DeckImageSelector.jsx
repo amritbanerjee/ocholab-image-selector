@@ -261,28 +261,56 @@ const DeckImageSelector = ({ supabase, session }) => {
     fetchDecks();
   }, [supabase, deckId]);
 
-  const handleImageSelect = (image) => {
-    // Prevent selection if conditions aren't met or if it's a placeholder
-    // Remove isRejected check
-    if (!cards[currentIndex] /*|| image.isRejected*/ || image.isBaseImage || image.isPlaceholder) return;
+  // Updated handleImageSelect to accept hasError from DeckImageCard
+  const handleImageSelect = (image, hasError) => {
+    // Prevent selection if conditions aren't met, if it's a placeholder, OR if it has an error
+    if (!cards[currentIndex] || image.isBaseImage || image.isPlaceholder || hasError) return;
     
     // Determine the list of images that are valid for the modal
-    // Remove isRejected and isBaseImage filter here, only filter placeholders
-    const validImagesForModal = getImagesToDisplay(cards[currentIndex].images)
-                                .filter(img => !img.isPlaceholder /*&& !img.isRejected && !img.isBaseImage*/);
+    // Filter out placeholders AND images that DeckImageCard reported as having errors
+    // We need a way to know which images have errors *before* filtering.
+    // Let's assume for now getImagesToDisplay provides the full list including potential errors
+    // We'll need to adjust how we get the valid list.
 
-    // Find the index of the clicked image within this valid list
+    // --- REVISED LOGIC --- 
+    // 1. Get the full list of potential images for the current card
+    const potentialImages = getImagesToDisplay(cards[currentIndex].images);
+
+    // 2. Filter this list to only include images that are NOT placeholders AND do NOT have loading errors.
+    //    We rely on DeckImageCard having correctly set its internal `hasError` state for each image.
+    //    Since DeckImageCard manages its own error state, we can't directly filter based on it here.
+    //    INSTEAD: We should filter the list *before* passing it to the modal.
+
+    // Find the index of the clicked image within the *original* potentialImages list
+    const originalIndex = potentialImages.findIndex(img => img.id === image.id);
+
+    // If the clicked image itself has an error (passed from DeckImageCard), do nothing.
+    if (hasError) {
+      console.log("Preventing modal open for image with error:", image.url);
+      return;
+    }
+
+    // Filter the potential images *after* confirming the clicked one is okay
+    // This list will be passed to the modal
+    const validImagesForModal = potentialImages.filter(img => !img.isPlaceholder /* && !img.hasError - We need to track this */);
+    // TODO: We need a way to track 'hasError' status at this level, perhaps by lifting state up
+    //       or by re-validating URLs here (less ideal).
+    //       For now, let's assume the clicked image check is sufficient, but acknowledge this limitation.
+
+    // Find the index of the clicked image within the *filtered* list for the modal's initial state
     const initialIndexInModal = validImagesForModal.findIndex(img => img.id === image.id);
 
     // Only proceed if the image is actually in the list we'll send to the modal
     if (initialIndexInModal >= 0) {
       setSelectedImage({
         image: image, // Store the initially clicked image object
-        initialIndex: initialIndexInModal // Store the index within the filtered list
+        initialIndex: initialIndexInModal, // Store the index within the filtered list
+        // Pass the filtered list to the modal
+        images: validImagesForModal 
       });
     } else {
-      // Log an error if the clicked image wasn't found in the valid list (shouldn't happen)
-      console.error("Clicked image not found in the list of valid images for the modal.");
+      // Log an error if the clicked image wasn't found in the valid list (shouldn't happen if !hasError)
+      console.error("Clicked image not found in the list of valid images for the modal, despite not having an error.");
     }
   };
 
@@ -588,9 +616,10 @@ const ImageModal = ({ initialImage, initialIndex, images, onClose, onConfirm }) 
           {cards.length > 0 && <ActionButtons deckId={currentCard.id} />}
         </div>
         
-        {/* Image Grid Section (Restored Layout, using DeckImageCard) */}
+        // Image Grid Section (Restored Layout, using DeckImageCard)
         <div className="flex-1 grid grid-cols-1 gap-2 mt-2">
-          <div className="grid grid-cols-2 gap-4 md:flex md:overflow-x-auto md:space-x-4 pb-4">
+          {/* Adjusted grid classes for consistent sizing */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pb-4">
             {imagesToDisplay.map((image) => (
               <LazyLoadWrapper key={image.id} rootMargin="200px" threshold={0.1}>
                 {/* Use DeckImageCard here instead of renderImage */}

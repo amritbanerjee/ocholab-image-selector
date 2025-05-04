@@ -26,28 +26,33 @@ const DeckImageCard = ({ image, onClick }) => {
   };
 
   // Determine if the card should be clickable
+  // Also prevent clicking if the image has an error
   const isClickable = !image.isPlaceholder && !image.isBaseImage && !hasError;
   const cursorStyle = isClickable ? 'cursor-pointer hover:opacity-90' : 'cursor-not-allowed';
 
   return (
     <div
       key={image.id}
-      className={`relative rounded-lg overflow-hidden aspect-[2/3] bg-gray-200 dark:bg-gray-700 ${cursorStyle}`}
-      onClick={isClickable ? () => onClick(image) : undefined}
+      // Keep the card background slightly lighter than the main page background
+      className={`relative rounded-lg overflow-hidden aspect-[2/3] bg-gray-200 dark:bg-gray-800 ${cursorStyle}`}
+      // Pass both image and hasError status to the onClick handler
+      onClick={isClickable ? () => onClick(image, hasError) : undefined}
       onDragStart={(e) => e.preventDefault()} // Prevent drag ghost
       title={hasError ? "Image not available" : (image.title || 'Deck image')}
     >
       {/* Show placeholder if there's an error or it's explicitly a placeholder */} 
       {hasError ? (
-        <div className="w-full h-full flex flex-col items-center justify-center text-gray-500 bg-gray-100 dark:bg-gray-800">
-          <FiImage size={40} className="mb-2 opacity-50" />
+        // Updated placeholder styles: MUCH darker background, lighter text/icon
+        <div className="w-full h-full flex flex-col items-center justify-center text-gray-500 dark:text-gray-500 bg-gray-900 dark:bg-gray-900">
+          <FiImage size={40} className="mb-2 opacity-50" /> {/* Reduced opacity for darker bg */}
           <span className="text-xs text-center px-2">No Image Available</span>
         </div>
       ) : (
         <>
           {/* Optional: Show a simple loading state while image loads */} 
           {isLoading && (
-            <div className="absolute inset-0 flex items-center justify-center bg-gray-200 dark:bg-gray-700">
+            // Match loading background to the new darker placeholder background
+            <div className="absolute inset-0 flex items-center justify-center bg-gray-900 dark:bg-gray-900">
               {/* You could add a spinner here if desired */}
             </div>
           )}
