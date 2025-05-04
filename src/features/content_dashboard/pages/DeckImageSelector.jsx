@@ -16,6 +16,8 @@ import DeckDetails from '../components/DeckDetails';
 import CardDetails from '../components/CardDetails';
 // Import the new DeckImageCard component
 import DeckImageCard from '../components/DeckImageCard'; 
+// Import the new StarRating component
+import StarRating from '../components/StarRating'; 
 // Import lazy loading wrapper for images
 import { LazyLoadWrapper } from '../../../utils/IntersectionObserver';
 // Import cache service for storing fetched data
@@ -162,9 +164,10 @@ const DeckImageSelector = ({ supabase, session }) => {
         }
         
         // First fetch deck data without translations
+        // Add 'rating' to the select query
         const { data: deckData, error: deckError } = await supabase
           .from('decks')
-          .select('id, title_key, description_key, asset_url, self_image_status')
+          .select('id, title_key, description_key, asset_url, self_image_status, rating') // Added rating
           .eq('self_image_status', 'image_created');
 
         if (deckError) throw deckError;
@@ -212,6 +215,15 @@ const DeckImageSelector = ({ supabase, session }) => {
             assetData = {};
           }
 
+          // Parse rating JSONB
+          let ratingData = {};
+          try {
+            ratingData = typeof deck.rating === 'string' ? JSON.parse(deck.rating) : (deck.rating || {});
+          } catch (parseError) {
+            console.error('Error parsing rating:', parseError, deck.rating);
+            ratingData = {};
+          }
+
           // Store the base image URL separately
           const baseimageUrl = (assetData.baseimage && typeof assetData.baseimage === 'string') ? assetData.baseimage : null;
           const isImageCreated = deck.status === 'imagecreated'; // Assuming this status check is still relevant
@@ -244,7 +256,9 @@ const DeckImageSelector = ({ supabase, session }) => {
             // Pass the processed list (max 4 images, correctly flagged)
             images: images, 
             cardName: deck.title_key ? (translationMap[deck.title_key] || `Key: ${deck.title_key}`) : `ID: ${deck.id}`,
-            cardDescription: deck.description_key ? (translationMap[deck.description_key] || `Key: ${deck.description_key}`) : ''
+            cardDescription: deck.description_key ? (translationMap[deck.description_key] || `Key: ${deck.description_key}`) : '',
+            // Store the parsed rating data
+            rating: ratingData 
           };
         });
 
@@ -396,14 +410,62 @@ useEffect(() => {
   // Add dependencies: handlePrevious, handleNext, and selectedImage
 }, [handlePrevious, handleNext, selectedImage]); 
 
+// --- Handler for Rating Update (Placeholder for now) ---
+const handleRatingUpdate = async (newRating) => {
+  const currentDeck = cards[currentIndex];
+  if (!currentDeck) return;
+
+  console.log(`Updating rating for deck ${currentDeck.id} to ${newRating}`);
+  // Prepare the data: null if rating is 0, otherwise {userrating: newRating}
+  const updatedRatingJson = newRating === 0 ? null : { userrating: newRating };
+  const originalRating = currentDeck.rating; // Store original for potential revert
+
+  // Update local cards state optimistically
+  const updatedCards = cards.map((card, index) => {
+    if (index === currentIndex) {
+      return { ...card, rating: updatedRatingJson };
+    }
+    return card;
+  });
+  setCards(updatedCards);
+
+  // Actual DB update
+  try {
+    const { error } = await supabase
+      .from('decks')
+      .update({ rating: updatedRatingJson }) // Overwrite the rating column
+      .eq('id', currentDeck.id);
+    
+    if (error) throw error;
+    console.log('DB update successful');
+    // Optionally clear cache if needed after update
+    // await cacheService.clear(`decks:${session?.user?.id}`);
+
+  } catch (err) {
+    console.error('Error updating rating in DB:', err);
+    // Revert local state change on error
+    const revertedCards = cards.map((card, index) => {
+      if (index === currentIndex) {
+        return { ...card, rating: originalRating }; // Revert to original rating
+      }
+      return card;
+    });
+    setCards(revertedCards);
+    // Optionally show an error message to the user
+    setError(`Failed to update rating: ${err.message}`);
+  }
+};
+
 const CardCounter = () => (
   <div className="flex items-center justify-center mx-4 text-gray-600 font-medium">
     {cards.length > 0 ? `${currentIndex + 1} of ${cards.length}` : '0 of 0'}
   </div>
 );
 
-const ActionButtons = ({ deckId }) => (
-  <div className="flex space-x-4 ml-4">
+const ActionButtons = ({ deckId, currentRating, onRatingChange }) => (
+  // Use flex container to align buttons and stars
+  <div className="flex items-center space-x-4 ml-4">
+    {/* Existing Buttons */}
     <button 
       onClick={() => handleRejectTopic(deckId)}
       className="p-3 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors flex items-center justify-center"
@@ -426,6 +488,14 @@ const ActionButtons = ({ deckId }) => (
       {/* Use FiRefreshCw or another appropriate icon if FiImage was only for this */}
       <FiRefreshCw size={20} /> 
     </button>
+
+    {/* Add Star Rating Component */}
+    <div className="ml-auto pl-4"> {/* Push stars to the right */} 
+      <StarRating 
+        currentRating={currentRating} 
+        onRatingChange={onRatingChange} 
+      />
+    </div>
   </div>
 );
 
@@ -613,7 +683,14 @@ const ImageModal = ({ initialImage, initialIndex, images, onClose, onConfirm }) 
           <div className="w-full md:w-1/2">
             <DeckDetails deckName={currentCard.cardName} deckDescription={currentCard.cardDescription} />
           </div>
-          {cards.length > 0 && <ActionButtons deckId={currentCard.id} />}
+          {/* Pass currentRating and onRatingChange to ActionButtons */}
+          {cards.length > 0 && (
+            <ActionButtons 
+              deckId={currentCard.id} 
+              currentRating={currentCard.rating?.userrating || 0} // Extract rating
+              onRatingChange={handleRatingUpdate} // Pass the handler
+            />
+          )}
         </div>
         
         // Image Grid Section (Restored Layout, using DeckImageCard)
