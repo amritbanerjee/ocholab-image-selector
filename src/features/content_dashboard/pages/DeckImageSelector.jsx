@@ -7,12 +7,15 @@ import { useSwipeable } from 'react-swipeable';
 // Import UI components for card layout
 import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui/card';
 // Import icons for navigation buttons
-import { FiHeart, FiArrowLeft, FiArrowRight, FiXCircle, FiRefreshCw, FiImage, FiChevronLeft, FiChevronRight, FiCheckCircle } from 'react-icons/fi'; // Added FiCheckCircle
+// Removed FiImage as it's now handled by DeckImageCard
+import { FiHeart, FiArrowLeft, FiArrowRight, FiXCircle, FiRefreshCw, FiChevronLeft, FiChevronRight, FiCheckCircle } from 'react-icons/fi'; 
 // Import CSS styles for animations
 import './ImageSelectorPage.css';
 // Import custom components for deck and card details
 import DeckDetails from '../components/DeckDetails';
 import CardDetails from '../components/CardDetails';
+// Import the new DeckImageCard component
+import DeckImageCard from '../components/DeckImageCard'; 
 // Import lazy loading wrapper for images
 import { LazyLoadWrapper } from '../../../utils/IntersectionObserver';
 // Import cache service for storing fetched data
@@ -97,7 +100,9 @@ const DeckImageSelector = ({ supabase, session }) => {
         id: `placeholder-${displayImages.length}`,
         url: null,
         title: 'Image not found',
-        isPlaceholder: true
+        isPlaceholder: true,
+        // Ensure placeholders have isBaseImage false if needed elsewhere
+        isBaseImage: false 
       });
     }
     return displayImages.slice(0, 4);
@@ -390,44 +395,18 @@ const ActionButtons = ({ deckId }) => (
       className="p-3 bg-green-500 text-white rounded-full hover:bg-green-600 transition-colors flex items-center justify-center"
       title="Regenerate just the image using the existing prompt"
     >
-      <FiImage size={20} />
+      {/* Use FiRefreshCw or another appropriate icon if FiImage was only for this */}
+      <FiRefreshCw size={20} /> 
     </button>
   </div>
 );
 
-const pulseAnimation = {
-  '0%': { transform: 'scale(1)', color: 'red' },
-  '50%': { transform: 'scale(1.3)', color: 'red' },
-  '100%': { transform: 'scale(1)', color: 'red' }
-
-};
-
+// REMOVED the old renderImage function entirely
+/*
 const renderImage = (image) => {
-  const style = image.isBaseImage ? 'border-2 border-yellow-400' : 
-                /*image.isRejected ? 'opacity-50' :*/ 
-                selectedImage?.image?.id === image.id ? 'border-3 border-blue-500' : ''; // Corrected selectedImage check
-  
-  return (
-    <div key={image.id} className={`relative rounded-lg overflow-hidden ${style} aspect-[2/3]`}> {/* Added aspect ratio */} 
-      <img 
-        src={image.url} 
-        alt={image.title || 'Deck image'} // Added fallback alt text
-        className={`w-full h-full object-cover cursor-pointer hover:opacity-90 ${/*image.isRejected ||*/ image.isBaseImage || image.isPlaceholder ? 'cursor-not-allowed' : ''}`} // Add cursor style for non-selectable
-        onClick={() => handleImageSelect(image)}
-        // Prevent drag ghost image
-        onDragStart={(e) => e.preventDefault()}
-      />
-      {/* Add Heart icon if it's the base image */}
-      {image.isBaseImage && (
-        <FiHeart 
-          className="absolute top-2 right-2 text-red-500 fill-current"
-          size={20}
-          title="Current Base Image"
-        />
-      )}
-    </div>
-  );
+  // ... old implementation ...
 };
+*/
 
 // Modify ImageModal to accept new props and manage internal state
 const ImageModal = ({ initialImage, initialIndex, images, onClose, onConfirm }) => {
@@ -514,54 +493,56 @@ const ImageModal = ({ initialImage, initialIndex, images, onClose, onConfirm }) 
       {/* Content Container (handles swipes) */}
       <div {...swipeHandlers} className="relative z-10 w-full max-w-4xl flex flex-col items-center justify-center">
         {/* Image Container with Navigation Arrows */}
-        <div className="relative w-full max-w-xl mb-4"> {/* Increased max-width from md to xl */} 
-          {/* Previous Button - Removed background, adjusted position/size */}
+        <div className="relative w-full max-w-xl mb-4">
+          {/* Previous Button */}
           <button
             onClick={handlePreviousImage}
             className="absolute left-[-50px] top-1/2 -translate-y-1/2 z-20 text-white hover:text-gray-300 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
             aria-label="Previous image"
-            disabled={currentImageIndex <= 0} // Disable when at the first image
+            disabled={currentImageIndex <= 0}
           >
-            <FiChevronLeft size={40} /> {/* Increased size */} 
+            <FiChevronLeft size={40} />
           </button>
 
-          {/* Image - Removed inner black box, added rounded corners, increased max-height */}
-          <img 
-            src={currentImage.url} // Display image based on internal state
-            alt={currentImage.title} // Use alt from current image
-            className="w-full h-auto max-h-[80vh] object-contain rounded-2xl shadow-xl" // Increased rounding from rounded-lg to rounded-2xl
-          />
+          {/* Image Container Div - Apply rounding and shadow here */}
+          <div className="overflow-hidden rounded-2xl shadow-xl">
+            <img 
+              src={currentImage.url} 
+              alt={currentImage.title}
+              // Removed styling from img, applied to parent div
+              className="w-full h-auto max-h-[80vh] object-contain" 
+            />
+          </div>
 
-          {/* Next Button - Removed background, adjusted position/size */}
+          {/* Next Button */}
           <button
             onClick={handleNextImage}
             className="absolute right-[-50px] top-1/2 -translate-y-1/2 z-20 text-white hover:text-gray-300 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
             aria-label="Next image"
-            disabled={currentImageIndex >= totalImages - 1} // Disable when at the last image
+            disabled={currentImageIndex >= totalImages - 1}
           >
-            <FiChevronRight size={40} /> {/* Increased size */} 
+            <FiChevronRight size={40} />
           </button>
         </div>
 
-        {/* Action Buttons (Tinder Style) */}
-        <div className="flex justify-center space-x-10 mt-6"> {/* Increased spacing and margin-top */} 
-          {/* Cancel Button (Red Cross) */}
+        {/* Action Buttons (Cancel/Confirm) */}
+        <div className="flex items-center justify-center space-x-10 mt-6">
+          {/* Cancel Button */}
           <button 
-            className="p-5 bg-white/10 hover:bg-white/20 text-red-500 rounded-full transition-colors shadow-lg"
-            onClick={onClose}
-            aria-label="Cancel"
+            onClick={onClose} 
+            className="p-5 bg-red-500 text-white rounded-full hover:bg-red-600 transition-all duration-200 ease-in-out transform hover:scale-110"
+            aria-label="Cancel selection"
           >
-            <FiXCircle size={36} /> {/* Increased padding and icon size */} 
+            <FiXCircle size={36} />
           </button>
-          {/* Confirm Button (Green Tick) */}
+          {/* Confirm Button - Disable if it's the base image or placeholder */}
           <button 
-            className="p-5 bg-white/10 hover:bg-white/20 text-green-500 rounded-full transition-colors shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-            onClick={() => onConfirm(currentImage)} // Pass the currently displayed image
-            aria-label="Confirm Selection"
-            // Disable confirm if the current image is invalid for selection
-            disabled={currentImage.isPlaceholder || currentImage.isBaseImage}
+            onClick={() => onConfirm(currentImage)} 
+            className={`p-5 bg-green-500 text-white rounded-full transition-all duration-200 ease-in-out transform ${currentImage.isBaseImage || currentImage.isPlaceholder ? 'opacity-50 cursor-not-allowed' : 'hover:bg-green-600 hover:scale-110'}`}
+            aria-label="Confirm selection"
+            disabled={currentImage.isBaseImage || currentImage.isPlaceholder}
           >
-            <FiCheckCircle size={36} /> {/* Increased padding and icon size */} 
+            <FiCheckCircle size={36} />
           </button>
         </div>
       </div>
@@ -569,55 +550,58 @@ const ImageModal = ({ initialImage, initialIndex, images, onClose, onConfirm }) 
   );
 };
 
-return (
-  <div className="container mx-auto px-4 py-2">
-    {selectedImage && (() => {
-        // Prepare props for ImageModal
-        // Only filter placeholders now
-        const validImagesForModal = getImagesToDisplay(cards[currentIndex].images)
-                                    .filter(img => !img.isPlaceholder /*&& !img.isRejected && !img.isBaseImage*/);
-        const modalProps = {
-          initialImage: selectedImage.image, // Pass the initially clicked image object
-          initialIndex: selectedImage.initialIndex, // Pass the calculated index
-          images: validImagesForModal, // Pass the filtered list of images
-          onClose: handleDeselectImage,
-          // Pass the current image from the modal state to handleConfirmSelection
-          // This will be adjusted inside ImageModal later
-          onConfirm: (currentModalImage) => handleConfirmSelection(currentModalImage, cards[currentIndex]?.id) 
-        };
+  // Main component render - REVERTING LAYOUT STRUCTURE HERE
+  if (loading) return <div className="flex justify-center items-center h-screen">Loading decks...</div>;
+  if (error) return <div className="flex justify-center items-center h-screen text-red-500">Error: {error}</div>;
+  if (!cards || cards.length === 0) return <div className="flex justify-center items-center h-screen">No decks found matching the criteria.</div>;
 
-        return (
-          <ImageModal {...modalProps} />
-        );
-      })()}
-    {loading ? (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-      </div>
-    ) : error ? (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="p-4 text-sm text-red-700 bg-red-100 rounded-lg" role="alert">
-          Error: {error}
-        </div>
-      </div>
-    ) : cards.length > 0 ? (
+  const currentCard = cards[currentIndex];
+  if (!currentCard) return <div className="flex justify-center items-center h-screen">Card not found at index {currentIndex}.</div>;
+
+  // Ensure we always get 4 images/placeholders for the grid
+  const imagesToDisplay = getImagesToDisplay(currentCard.images || []);
+
+  // Use the layout structure from *before* the last edit, but integrate DeckImageCard
+  return (
+    <div className="container mx-auto px-4 py-2">
+      {/* Modal Rendering Logic (Keep as is) */}
+      {selectedImage && (() => {
+          const validImagesForModal = getImagesToDisplay(currentCard.images)
+                                      .filter(img => !img.isPlaceholder);
+          const modalProps = {
+            initialImage: selectedImage.image,
+            initialIndex: selectedImage.initialIndex,
+            images: validImagesForModal,
+            onClose: handleDeselectImage,
+            onConfirm: (currentModalImage) => handleConfirmSelection(currentModalImage, currentCard?.id)
+          };
+          return <ImageModal {...modalProps} />;
+        })()}
+      
+      {/* Main Content Area (Restored Layout) */}
       <div {...swipeHandlers} className="flex flex-col h-full">
+        {/* Top Section: Details and Action Buttons */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center pl-0 pr-4 py-2 gap-2 md:gap-0">
           <div className="w-full md:w-1/2">
-            <DeckDetails deckName={deckName} deckDescription={deckDescription} />
+            <DeckDetails deckName={currentCard.cardName} deckDescription={currentCard.cardDescription} />
           </div>
-          {cards.length > 0 && <ActionButtons deckId={cards[currentIndex].id} />}
+          {cards.length > 0 && <ActionButtons deckId={currentCard.id} />}
         </div>
         
-        
+        {/* Image Grid Section (Restored Layout, using DeckImageCard) */}
         <div className="flex-1 grid grid-cols-1 gap-2 mt-2">
           <div className="grid grid-cols-2 gap-4 md:flex md:overflow-x-auto md:space-x-4 pb-4">
-            {cards[currentIndex].images.map((image) => (
-            <LazyLoadWrapper key={image.id} rootMargin="200px" threshold={0.1}>
-              {renderImage(image)}
-            </LazyLoadWrapper>
-          ))}
+            {imagesToDisplay.map((image) => (
+              <LazyLoadWrapper key={image.id} rootMargin="200px" threshold={0.1}>
+                {/* Use DeckImageCard here instead of renderImage */}
+                <DeckImageCard 
+                  image={image} 
+                  onClick={handleImageSelect} 
+                />
+              </LazyLoadWrapper>
+            ))}
           </div>
+          {/* Navigation Controls (Restored Layout) */}
           <div className="flex items-center justify-center mt-4">
             <button 
               onClick={handlePrevious}
@@ -637,13 +621,8 @@ return (
           </div>
         </div>
       </div>
-    ) : (
-      <div className="text-center text-gray-600 mt-8">
-        No cards available for this deck
-      </div>
-    )}
-  </div>
-);
+    </div>
+  );
+};
 
-}
 export default DeckImageSelector;
