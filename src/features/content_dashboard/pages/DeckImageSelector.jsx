@@ -48,8 +48,8 @@ const DeckImageSelector = ({ supabase, session }) => {
         .eq('id', deckId);
       
       if (error) throw error;
-      // Refresh deck list after update
-      fetchDecks();
+      // Refresh deck list after update - REMOVED fetchDecks()
+      // fetchDecks(); 
     } catch (err) {
       console.error('Error rejecting topic:', err);
     }
@@ -67,8 +67,8 @@ const DeckImageSelector = ({ supabase, session }) => {
         .eq('id', deckId);
       
       if (error) throw error;
-      // Refresh deck list after update
-      fetchDecks();
+      // Refresh deck list after update - REMOVED fetchDecks()
+      // fetchDecks();
     } catch (err) {
       console.error('Error recreating prompt and image:', err);
     }
@@ -86,8 +86,8 @@ const DeckImageSelector = ({ supabase, session }) => {
         .eq('id', deckId);
       
       if (error) throw error;
-      // Refresh deck list after update
-      fetchDecks();
+      // Refresh deck list after update - REMOVED fetchDecks()
+      // fetchDecks();
     } catch (err) {
       console.error('Error recreating image:', err);
     }
