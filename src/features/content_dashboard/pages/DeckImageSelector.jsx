@@ -34,6 +34,7 @@ const DeckImageSelector = ({ supabase, session }) => {
   const [loading, setLoading] = useState(true); // Loading state
   const [error, setError] = useState(null); // Error state
   const [selectedImage, setSelectedImage] = useState(null); // Currently selected image
+  const [successMessage, setSuccessMessage] = useState(''); // State for success messages
   
   // Handler for rejecting a deck topic
   const handleRejectTopic = async (deckId) => {
@@ -48,10 +49,14 @@ const DeckImageSelector = ({ supabase, session }) => {
         .eq('id', deckId);
       
       if (error) throw error;
+      setSuccessMessage('Deck Rejected');
+      setTimeout(() => setSuccessMessage(''), 3000); // Clear message after 3 seconds
       // Refresh deck list after update - REMOVED fetchDecks()
       // fetchDecks(); 
     } catch (err) {
       console.error('Error rejecting topic:', err);
+      setError('Failed to reject topic.');
+      setTimeout(() => setError(null), 3000);
     }
   };
   
@@ -67,10 +72,14 @@ const DeckImageSelector = ({ supabase, session }) => {
         .eq('id', deckId);
       
       if (error) throw error;
+      setSuccessMessage('Deck sent for prompt and image recreation');
+      setTimeout(() => setSuccessMessage(''), 3000); // Clear message after 3 seconds
       // Refresh deck list after update - REMOVED fetchDecks()
       // fetchDecks();
     } catch (err) {
       console.error('Error recreating prompt and image:', err);
+      setError('Failed to recreate prompt and image.');
+      setTimeout(() => setError(null), 3000);
     }
   };
   
@@ -86,10 +95,14 @@ const DeckImageSelector = ({ supabase, session }) => {
         .eq('id', deckId);
       
       if (error) throw error;
+      setSuccessMessage('Deck sent for image recreation');
+      setTimeout(() => setSuccessMessage(''), 3000); // Clear message after 3 seconds
       // Refresh deck list after update - REMOVED fetchDecks()
       // fetchDecks();
     } catch (err) {
       console.error('Error recreating image:', err);
+      setError('Failed to recreate image.');
+      setTimeout(() => setError(null), 3000);
     }
   };
   
@@ -438,6 +451,8 @@ const handleRatingUpdate = async (newRating) => {
     
     if (error) throw error;
     console.log('DB update successful');
+    setSuccessMessage('Rating updated successfully!');
+    setTimeout(() => setSuccessMessage(''), 3000);
     // Optionally clear cache if needed after update
     // await cacheService.clear(`decks:${session?.user?.id}`);
 
@@ -453,6 +468,7 @@ const handleRatingUpdate = async (newRating) => {
     setCards(revertedCards);
     // Optionally show an error message to the user
     setError(`Failed to update rating: ${err.message}`);
+    setTimeout(() => setError(null), 3000);
   }
 };
 
@@ -662,6 +678,18 @@ const ImageModal = ({ initialImage, initialIndex, images, onClose, onConfirm }) 
   // Use the layout structure from *before* the last edit, but integrate DeckImageCard
   return (
     <div className="container mx-auto px-4 py-2">
+      {/* Success and Error Messages */}
+      {successMessage && (
+        <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4" role="alert">
+          <span className="block sm:inline">{successMessage}</span>
+        </div>
+      )}
+      {error && (
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
+          <span className="block sm:inline">{error}</span>
+        </div>
+      )}
+
       {/* Modal Rendering Logic (Keep as is) */}
       {selectedImage && (() => {
           const validImagesForModal = getImagesToDisplay(currentCard.images)
